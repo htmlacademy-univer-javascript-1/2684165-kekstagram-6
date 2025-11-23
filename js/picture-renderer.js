@@ -1,3 +1,5 @@
+import { openFullscreenPicture } from './fullscreen-picture.js';
+
 const renderPictures = (pictures) => {
   const pictureTemplate = document.querySelector('#picture');
   const picturesContainer = document.querySelector('.pictures');
@@ -9,7 +11,8 @@ const renderPictures = (pictures) => {
 
   const fragment = document.createDocumentFragment();
 
-  pictures.forEach(({ url, description, likes, comments }) => {
+  pictures.forEach((pictureData) => {
+    const { url, description, likes, comments } = pictureData;
     const pictureElement = pictureTemplate.content.cloneNode(true).children[0];
 
     const img = pictureElement.querySelector('.picture__img');
@@ -28,10 +31,15 @@ const renderPictures = (pictures) => {
       commentsElement.textContent = Array.isArray(comments) ? comments.length : comments;
     }
 
+    pictureElement.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      openFullscreenPicture(pictureData);
+    });
+
     fragment.appendChild(pictureElement);
   });
 
   picturesContainer.appendChild(fragment);
 };
 
-export { renderPictures };
+export { renderPictures }

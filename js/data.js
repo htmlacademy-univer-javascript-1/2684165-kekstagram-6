@@ -40,4 +40,4 @@ const createArray = () => {
 
 const similarArray = Array.from({length: COUNT_OBJECTS}, createArray);
 
-export { similarArray };
+export { similarArray }
