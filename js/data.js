@@ -28,7 +28,7 @@ const createComments = () => ({
 
 const createArray = () => {
   const similarComments = Array.from({length: getRandomInteger(0, 30)}, createComments);
-  
+
   return {
     id: createRandomIdFromRangeGenerator(1, 25)(),
     url: `photos/${createRandomIdFromRangeGenerator(1, 25)()}.jpg`,
@@ -40,4 +40,4 @@ const createArray = () => {
 
 const similarArray = Array.from({length: COUNT_OBJECTS}, createArray);
 
-export { similarArray }
+export { similarArray };
