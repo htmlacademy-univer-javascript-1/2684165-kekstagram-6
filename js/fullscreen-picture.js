@@ -74,8 +74,7 @@ const openFullscreenPicture = (pictureData) => {
 
   renderComments(comments);
 
-
-
+  
   bigPicture.classList.remove('hidden');
   document.body.classList.add('modal-open');
 };

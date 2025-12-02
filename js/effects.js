@@ -55,9 +55,9 @@ const initSlider = () => {
   effectLevelSlider.innerHTML = `
     <input type="range" min="0" max="100" value="100" class="effect-level__slider-element">
   `;
-  
+
   const sliderElement = effectLevelSlider.querySelector('.effect-level__slider-element');
-  
+
   sliderElement.addEventListener('input', (evt) => {
     const value = evt.target.value;
     effectLevelValue.value = value;
@@ -68,7 +68,7 @@ const initSlider = () => {
 const updateSlider = () => {
   const effect = Effects[currentEffect];
   const sliderElement = effectLevelSlider.querySelector('.effect-level__slider-element');
-  
+
   if (sliderElement) {
     sliderElement.min = effect.min;
     sliderElement.max = effect.max;
@@ -87,12 +87,12 @@ const toggleSliderVisibility = () => {
 
 const applyEffect = (value) => {
   const effect = Effects[currentEffect];
-  
+
   if (effect.filter === 'none') {
     imagePreview.style.filter = 'none';
     return;
   }
-  
+
   imagePreview.style.filter = `${effect.filter}(${value}${effect.unit})`;
 };
 
@@ -112,7 +112,7 @@ const resetEffects = () => {
   imagePreview.style.filter = 'none';
   toggleSliderVisibility();
   effectLevelValue.value = '';
-  
+
   const noneEffect = document.querySelector('#effect-none');
   if (noneEffect) {
     noneEffect.checked = true;

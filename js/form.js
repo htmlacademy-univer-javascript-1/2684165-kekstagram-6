@@ -109,7 +109,7 @@ const showModal = () => {
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
   document.addEventListener('keydown', onDocumentKeydown);
-  
+
   pristine.reset();
 };
 
@@ -118,7 +118,7 @@ const hideModal = () => {
   resetScale();
   resetEffects();
   pristine.reset();
-  
+
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
   document.removeEventListener('keydown', onDocumentKeydown);
@@ -132,9 +132,9 @@ const onFileInputChange = () => {
 
 const onFormSubmit = (evt) => {
   evt.preventDefault();
-  
+
   const isValid = pristine.validate();
-  
+
   if (isValid) {
     console.log('Форма валидна, отправляем данные на сервер');
     hideModal();
@@ -151,7 +151,7 @@ const setupLiveValidation = () => {
   hashtagField.addEventListener('input', () => {
     pristine.validate(hashtagField);
   });
-  
+
   commentField.addEventListener('input', () => {
     pristine.validate(commentField);
   });
