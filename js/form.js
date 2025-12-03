@@ -10,12 +10,14 @@ const commentField = document.querySelector('.text__description');
 
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
+const MAX_HASHTAG_LENGTH = 20;
 const VALID_HASHTAG = /^#[a-zа-яё0-9]{1,19}$/i;
 
 const ErrorText = {
   INVALID_COUNT: `Максимум ${MAX_HASHTAG_COUNT} хэштегов`,
   NOT_UNIQUE: 'Хэштеги должны быть уникальными',
-  INVALID_PATTERN: 'Неправильный хэштег',
+  INVALID_PATTERN: 'Неправильный хэштег. Хэштег должен начинаться с #, содержать только буквы и цифры, длина от 1 до 19 символов после #',
+  INVALID_HASHTAG: 'Хэштег не может состоять только из решётки',
   INVALID_COMMENT: `Длина комментария не должна превышать ${MAX_COMMENT_LENGTH} символов`
 };
 
@@ -43,8 +45,19 @@ const hasUniqueTags = (value) => {
 
 const hasValidTags = (value) => {
   const tags = normalizeTags(value);
-  if (tags.length === 0) return true;
-  return tags.every((tag) => VALID_HASHTAG.test(tag));
+  if (tags.length === 0) return true; 
+
+  return tags.every((tag) => {
+    if (tag === '#') {
+      return false;
+    }
+
+    if (tag.length > MAX_HASHTAG_LENGTH) {
+      return false;
+    }
+
+    return VALID_HASHTAG.test(tag);
+  });
 };
 
 const hasValidComment = (value) => value.length <= MAX_COMMENT_LENGTH;
@@ -137,6 +150,22 @@ const onFormSubmit = (evt) => {
 
   if (isValid) {
     console.log('Форма валидна, отправляем данные на сервер');
+
+    const formData = new FormData(form);
+
+    const scaleValue = document.querySelector('.scale__control--value').value;
+    const effectLevelValue = document.querySelector('.effect-level__value').value;
+
+    formData.append('scale', scaleValue);
+    formData.append('effect-level', effectLevelValue);
+
+    console.log('Данные формы:', {
+      scale: scaleValue,
+      effectLevel: effectLevelValue,
+      hashtags: hashtagField.value,
+      description: commentField.value
+    });
+
     hideModal();
   } else {
     console.log('Форма содержит ошибки валидации');

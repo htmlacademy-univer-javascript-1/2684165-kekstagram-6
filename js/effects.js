@@ -50,31 +50,71 @@ const Effects = {
 };
 
 let currentEffect = 'none';
+let slider = null;
+
+const isNoUiSliderAvailable = () => {
+  return typeof noUiSlider !== 'undefined';
+};
 
 const initSlider = () => {
-  effectLevelSlider.innerHTML = `
-    <input type="range" min="0" max="100" value="100" class="effect-level__slider-element">
-  `;
+  if (!isNoUiSliderAvailable()) {
+    console.error('noUiSlider не доступен. Проверьте подключение библиотеки.');
+    return;
+  }
 
-  const sliderElement = effectLevelSlider.querySelector('.effect-level__slider-element');
+  if (effectLevelSlider) {
+    try {
+      slider = noUiSlider.create(effectLevelSlider, {
+        range: {
+          min: 0,
+          max: 100,
+        },
+        start: 100,
+        step: 1,
+        connect: 'lower',
+        format: {
+          to: function (value) {
+            if (currentEffect === 'chrome' || currentEffect === 'sepia') {
+              return value.toFixed(1); 
+            } else if (currentEffect === 'marvin') {
+              return Math.round(value); 
+            } else if (currentEffect === 'phobos' || currentEffect === 'heat') {
+              return value.toFixed(1);
+            }
+            return value;
+          },
+          from: function (value) {
+            return parseFloat(value);
+          },
+        },
+      });
 
-  sliderElement.addEventListener('input', (evt) => {
-    const value = evt.target.value;
-    effectLevelValue.value = value;
-    applyEffect(value);
-  });
+      slider.on('update', (values, handle) => {
+        const value = values[handle];
+        effectLevelValue.value = value;
+        applyEffect(value);
+      });
+
+      console.log('noUiSlider инициализирован успешно');
+    } catch (error) {
+      console.error('Ошибка при создании noUiSlider:', error);
+    }
+  }
 };
 
 const updateSlider = () => {
-  const effect = Effects[currentEffect];
-  const sliderElement = effectLevelSlider.querySelector('.effect-level__slider-element');
+  if (!slider) return;
 
-  if (sliderElement) {
-    sliderElement.min = effect.min;
-    sliderElement.max = effect.max;
-    sliderElement.step = effect.step;
-    sliderElement.value = effect.max;
-  }
+  const effect = Effects[currentEffect];
+
+  slider.updateOptions({
+    range: {
+      min: effect.min,
+      max: effect.max,
+    },
+    step: effect.step,
+    start: effect.max, 
+  });
 };
 
 const toggleSliderVisibility = () => {
@@ -90,19 +130,34 @@ const applyEffect = (value) => {
 
   if (effect.filter === 'none') {
     imagePreview.style.filter = 'none';
+    effectLevelValue.value = '';
     return;
   }
 
-  imagePreview.style.filter = `${effect.filter}(${value}${effect.unit})`;
+  let formattedValue = value;
+  if (effect.unit === '%') {
+    formattedValue = `${value}%`;
+  } else if (effect.unit === 'px') {
+    formattedValue = `${value}px`;
+  }
+
+  imagePreview.style.filter = `${effect.filter}(${formattedValue})`;
+  effectLevelValue.value = value;
 };
 
 const onEffectChange = (evt) => {
   if (evt.target.classList.contains('effects__radio')) {
     currentEffect = evt.target.value;
     imagePreview.className = `effects__preview--${currentEffect}`;
-    updateSlider();
+
+    if (slider) {
+      const effect = Effects[currentEffect];
+      updateSlider();
+      slider.set(effect.max); 
+      applyEffect(effect.max);
+    }
+
     toggleSliderVisibility();
-    applyEffect(Effects[currentEffect].max);
   }
 };
 
@@ -117,13 +172,42 @@ const resetEffects = () => {
   if (noneEffect) {
     noneEffect.checked = true;
   }
+
+  if (slider) {
+    slider.updateOptions({
+      range: {
+        min: 0,
+        max: 100,
+      },
+      step: 1,
+      start: 100,
+    });
+    slider.set(100);
+  }
+};
+
+const destroyEffects = () => {
+  if (slider) {
+    slider.destroy();
+    slider = null;
+  }
+  effectsList.removeEventListener('change', onEffectChange);
 };
 
 const initEffects = () => {
+  if (!isNoUiSliderAvailable()) {
+    console.warn('noUiSlider не доступен. Эффекты будут отключены.');
+    effectLevel.classList.add('hidden');
+    return;
+  }
+
   effectLevel.classList.add('hidden');
-  effectsList.addEventListener('change', onEffectChange);
+
   initSlider();
+
+  effectsList.addEventListener('change', onEffectChange);
+
   resetEffects();
 };
 
-export { initEffects, resetEffects };
+export { initEffects, resetEffects, destroyEffects };

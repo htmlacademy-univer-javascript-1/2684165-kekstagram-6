@@ -14,6 +14,8 @@ let currentScale = Scale.DEFAULT;
 
 const updateScaleDisplay = () => {
   scaleControl.value = `${currentScale}%`;
+  scaleControl.setAttribute('value', `${currentScale}%`);
+
   imagePreview.style.transform = `scale(${currentScale / 100})`;
 };
 
@@ -39,6 +41,7 @@ const resetScale = () => {
 const initScale = () => {
   scaleSmaller.addEventListener('click', onScaleDownClick);
   scaleBigger.addEventListener('click', onScaleUpClick);
+
   resetScale();
 };
 
