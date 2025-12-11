@@ -5,7 +5,6 @@ const renderPictures = (pictures) => {
   const picturesContainer = document.querySelector('.pictures');
 
   if (!pictureTemplate || !picturesContainer) {
-    console.error('Шаблон #picture или контейнер .pictures не найден');
     return;
   }
 

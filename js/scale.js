@@ -19,7 +19,7 @@ const updateScaleDisplay = () => {
   imagePreview.style.transform = `scale(${currentScale / 100})`;
 };
 
-const onScaleDownClick = () => {
+const scaleDownClick = () => {
   if (currentScale > Scale.MIN) {
     currentScale -= Scale.STEP;
     updateScaleDisplay();
@@ -39,7 +39,7 @@ const resetScale = () => {
 };
 
 const initScale = () => {
-  scaleSmaller.addEventListener('click', onScaleDownClick);
+  scaleSmaller.addEventListener('click', scaleDownClick);
   scaleBigger.addEventListener('click', onScaleUpClick);
 
   resetScale();

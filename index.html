@@ -8,7 +8,7 @@
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <title>Кекстаграм</title>
   <script src="vendor/pristine/pristine.min.js"></script>
-  <script src="vendor/nouislider/nouislider.min.js"></script>
+  <script src="vendor\pristine/nouislider/nouislider.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 
@@ -238,6 +238,24 @@
   <template id="messages">
     <div class="img-upload__message  img-upload__message--loading">Загружаем...</div>
   </template>
+
+  <template id="success">
+  <div class="success">
+    <div class="success__inner">
+      <h2 class="success__title">Изображение успешно загружено</h2>
+      <button type="button" class="success__button">Круто!</button>
+    </div>
+  </div>
+</template>
+
+<template id="error">
+  <div class="error">
+    <div class="error__inner">
+      <h2 class="error__title">Ошибка загрузки файла</h2>
+      <button type="button" class="error__button">Попробовать ещё раз</button>
+    </div>
+  </div>
+</template>
 
 </body>
 </html>

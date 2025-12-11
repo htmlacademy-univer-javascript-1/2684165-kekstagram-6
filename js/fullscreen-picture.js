@@ -28,7 +28,7 @@ const renderCommentsPortion = () => {
   const commentsToShow = currentComments.slice(commentsShown, commentsShown + COMMENTS_PER_STEP);
 
   const fragment = document.createDocumentFragment();
-  commentsToShow.forEach(comment => {
+  commentsToShow.forEach((comment) => {
     fragment.appendChild(createComment(comment));
   });
 
@@ -74,7 +74,7 @@ const openFullscreenPicture = (pictureData) => {
 
   renderComments(comments);
 
-  
+
   bigPicture.classList.remove('hidden');
   document.body.classList.add('modal-open');
 };
