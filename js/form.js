@@ -42,7 +42,9 @@ const hasUniqueTags = (value) => {
 
 const hasValidTags = (value) => {
   const tags = normalizeTags(value);
-  if (tags.length === 0) return true; 
+  if (tags.length === 0) {
+    return true;
+  }
 
   return tags.every((tag) => {
     if (tag === '#') {
@@ -71,7 +73,6 @@ const unblockSubmitButton = () => {
 
 const setupValidation = () => {
   if (typeof Pristine === 'undefined') {
-    console.error('Pristine not found. Make sure pristine.min.js is loaded before your modules.');
     return;
   }
 
@@ -139,14 +140,14 @@ const setupFieldFocusHandlers = () => {
   commentField.addEventListener('blur', onFieldBlur);
 };
 
-const cancelButtonClick = () => {
+const onCancelButtonClick = () => {
   hideModal();
 };
 
 const onDocumentKeydown = (evt) => {
   if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
     evt.preventDefault();
-    cancelButtonClick();
+    onCancelButtonClick();
   }
 };
 
@@ -171,7 +172,7 @@ const hideModal = () => {
   fileField.value = '';
 };
 
-const fileInputChange = () => {
+const onFileInputChange = () => {
   const file = fileField.files[0];
   const fileName = file.name.toLowerCase();
 
@@ -189,13 +190,75 @@ const fileInputChange = () => {
   preview.src = URL.createObjectURL(file);
 };
 
+const showErrorOverlay = (errorText) => {
+  const errorOverlay = document.createElement('div');
+  errorOverlay.className = 'error-overlay';
+  errorOverlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  const errorContent = document.createElement('div');
+  errorContent.className = 'error-overlay__content';
+  errorContent.style.cssText = `
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+  `;
+
+  errorContent.innerHTML = `
+    <h3 style="margin-bottom: 15px; color: #ff6b6b;">Ошибка загрузки</h3>
+    <p style="margin-bottom: 20px;">${errorText}</p>
+    <button type="button" class="error-overlay__button" style="
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    ">Понятно</button>
+  `;
+
+  errorOverlay.appendChild(errorContent);
+  document.body.appendChild(errorOverlay);
+
+  const closeErrorOverlay = () => {
+    errorOverlay.remove();
+    document.removeEventListener('keydown', onEscapePress);
+  };
+
+  const onEscapePress = (evt) => {
+    if (evt.key === 'Escape') {
+      closeErrorOverlay();
+    }
+  };
+
+  errorOverlay.querySelector('.error-overlay__button').addEventListener('click', closeErrorOverlay);
+  errorOverlay.addEventListener('click', (evt) => {
+    if (evt.target === errorOverlay) {
+      closeErrorOverlay();
+    }
+  });
+
+  document.addEventListener('keydown', onEscapePress);
+};
+
 const onFormSubmit = async (evt) => {
   evt.preventDefault();
 
   const isValid = pristine.validate();
 
   if (!isValid) {
-    console.log('Форма содержит ошибки валидации');
     const firstError = form.querySelector('.img-upload__field-wrapper--error');
     if (firstError) {
       firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -220,7 +283,7 @@ const onFormSubmit = async (evt) => {
     setTimeout(() => {
       showSuccessMessage();
     }, 300);
-    
+
   } catch (error) {
     showErrorOverlay(error.message);
   } finally {
@@ -229,8 +292,8 @@ const onFormSubmit = async (evt) => {
 };
 
 const setupEventListeners = () => {
-  fileField.addEventListener('change', fileInputChange);
-  cancelButton.addEventListener('click', cancelButtonClick);
+  fileField.addEventListener('change', onFileInputChange);
+  cancelButton.addEventListener('click', onCancelButtonClick);
   form.addEventListener('submit', onFormSubmit);
 };
 

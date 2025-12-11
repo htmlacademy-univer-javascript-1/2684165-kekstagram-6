@@ -20,7 +20,6 @@ const initApp = () => {
   if (typeof noUiSlider !== 'undefined') {
     initEffects();
   } else {
-    console.error('noUiSlider не загружен. Убедитесь, что библиотека подключена в HTML.');
     const effectLevel = document.querySelector('.effect-level');
     if (effectLevel) {
       effectLevel.classList.add('hidden');

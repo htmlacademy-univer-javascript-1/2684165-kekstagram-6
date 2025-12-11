@@ -54,75 +54,6 @@ let slider = null;
 
 const isNoUiSliderAvailable = () => typeof noUiSlider !== 'undefined';
 
-const initSlider = () => {
-  if (!isNoUiSliderAvailable()) {
-    console.error('noUiSlider не доступен. Проверьте подключение библиотеки.');
-    return;
-  }
-
-  if (effectLevelSlider) {
-    try {
-      slider = noUiSlider.create(effectLevelSlider, {
-        range: {
-          min: 0,
-          max: 100,
-        },
-        start: 100,
-        step: 1,
-        connect: 'lower',
-        format: {
-          to: function (value) {
-            if (currentEffect === 'chrome' || currentEffect === 'sepia') {
-              return value.toFixed(1); 
-            } else if (currentEffect === 'marvin') {
-              return Math.round(value); 
-            } else if (currentEffect === 'phobos' || currentEffect === 'heat') {
-              return value.toFixed(1);
-            }
-            return value;
-          },
-          from: function (value) {
-            return parseFloat(value);
-          },
-        },
-      });
-
-      slider.on('update', (values, handle) => {
-        const value = values[handle];
-        effectLevelValue.value = value;
-        applyEffect(value);
-      });
-
-      console.log('noUiSlider инициализирован успешно');
-    } catch (error) {
-      console.error('Ошибка при создании noUiSlider:', error);
-    }
-  }
-};
-
-const updateSlider = () => {
-  if (!slider) return;
-
-  const effect = Effects[currentEffect];
-
-  slider.updateOptions({
-    range: {
-      min: effect.min,
-      max: effect.max,
-    },
-    step: effect.step,
-    start: effect.max, 
-  });
-};
-
-const toggleSliderVisibility = () => {
-  if (currentEffect === 'none') {
-    effectLevel.classList.add('hidden');
-  } else {
-    effectLevel.classList.remove('hidden');
-  }
-};
-
 const applyEffect = (value) => {
   const effect = Effects[currentEffect];
 
@@ -143,7 +74,76 @@ const applyEffect = (value) => {
   effectLevelValue.value = value;
 };
 
-const effectChange = (evt) => {
+const initSlider = () => {
+  if (!isNoUiSliderAvailable()) {
+    return;
+  }
+
+  if (effectLevelSlider) {
+    try {
+      slider = noUiSlider.create(effectLevelSlider, {
+        range: {
+          min: 0,
+          max: 100,
+        },
+        start: 100,
+        step: 1,
+        connect: 'lower',
+        format: {
+          to: function (value) {
+            if (currentEffect === 'chrome' || currentEffect === 'sepia') {
+              return value.toFixed(1);
+            } else if (currentEffect === 'marvin') {
+              return Math.round(value);
+            } else if (currentEffect === 'phobos' || currentEffect === 'heat') {
+              return value.toFixed(1);
+            }
+            return value;
+          },
+          from: function (value) {
+            return parseFloat(value);
+          },
+        },
+      });
+
+      slider.on('update', (values, handle) => {
+        const value = values[handle];
+        effectLevelValue.value = value;
+        applyEffect(value);
+      });
+
+    } catch (error) {
+      // Ошибка при создании noUiSlider
+    }
+  }
+};
+
+const updateSlider = () => {
+  if (!slider) {
+    return;
+  }
+
+  const effect = Effects[currentEffect];
+
+  slider.updateOptions({
+    range: {
+      min: effect.min,
+      max: effect.max,
+    },
+    step: effect.step,
+    start: effect.max,
+  });
+};
+
+const toggleSliderVisibility = () => {
+  if (currentEffect === 'none') {
+    effectLevel.classList.add('hidden');
+  } else {
+    effectLevel.classList.remove('hidden');
+  }
+};
+
+const onEffectChange = (evt) => {
   if (evt.target.classList.contains('effects__radio')) {
     currentEffect = evt.target.value;
     imagePreview.className = `effects__preview--${currentEffect}`;
@@ -151,7 +151,7 @@ const effectChange = (evt) => {
     if (slider) {
       const effect = Effects[currentEffect];
       updateSlider();
-      slider.set(effect.max); 
+      slider.set(effect.max);
       applyEffect(effect.max);
     }
 
@@ -189,15 +189,11 @@ const destroyEffects = () => {
     slider.destroy();
     slider = null;
   }
-
-  if (effectsList) {
-    effectsList.removeEventListener('change', effectChange);
-  }
+  effectsList.removeEventListener('change', onEffectChange);
 };
 
 const initEffects = () => {
   if (!isNoUiSliderAvailable()) {
-    console.warn('noUiSlider не доступен. Эффекты будут отключены.');
     effectLevel.classList.add('hidden');
     return;
   }
@@ -206,7 +202,7 @@ const initEffects = () => {
 
   initSlider();
 
-  effectsList.addEventListener('change', effectChange);
+  effectsList.addEventListener('change', onEffectChange);
 
   resetEffects();
 };
