@@ -191,7 +191,7 @@ const destroyEffects = () => {
   }
 
   if (effectsList) {
-    effectsList.removeEventListener('change', onEffectChange);
+    effectsList.removeEventListener('change', effectChange);
   }
 };
 

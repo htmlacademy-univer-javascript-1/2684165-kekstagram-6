@@ -139,14 +139,14 @@ const setupFieldFocusHandlers = () => {
   commentField.addEventListener('blur', onFieldBlur);
 };
 
-const onCancelButtonClick = () => {
+const cancelButtonClick = () => {
   hideModal();
 };
 
 const onDocumentKeydown = (evt) => {
   if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
     evt.preventDefault();
-    onCancelButtonClick();
+    cancelButtonClick();
   }
 };
 
@@ -171,7 +171,7 @@ const hideModal = () => {
   fileField.value = '';
 };
 
-const onFileInputChange = () => {
+const fileInputChange = () => {
   const file = fileField.files[0];
   const fileName = file.name.toLowerCase();
 
@@ -207,7 +207,7 @@ const onFormSubmit = async (evt) => {
     blockSubmitButton();
 
     const formData = new FormData(form);
-    
+
     const scaleValue = document.querySelector('.scale__control--value').value;
     const effectLevelValue = document.querySelector('.effect-level__value').value;
 
@@ -216,18 +216,21 @@ const onFormSubmit = async (evt) => {
 
     await sendData(formData);
 
-    showSuccessMessage();
     hideModal();
+    setTimeout(() => {
+      showSuccessMessage();
+    }, 300);
+    
   } catch (error) {
-    showErrorMessage(error.message);
+    showErrorOverlay(error.message);
   } finally {
     unblockSubmitButton();
   }
 };
 
 const setupEventListeners = () => {
-  fileField.addEventListener('change', onFileInputChange);
-  cancelButton.addEventListener('click', onCancelButtonClick);
+  fileField.addEventListener('change', fileInputChange);
+  cancelButton.addEventListener('click', cancelButtonClick);
   form.addEventListener('submit', onFormSubmit);
 };
 
