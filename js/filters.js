@@ -24,13 +24,12 @@ const getRandomPhotos = (photos) => {
   return shuffledPhotos.slice(0, RANDOM_PHOTOS_COUNT);
 };
 
-const getDiscussedPhotos = (photos) => {
-  return [...photos].sort((a, b) => {
+const getDiscussedPhotos = (photos) =>
+  [...photos].sort((a, b) => {
     const aComments = a.comments ? a.comments.length : 0;
     const bComments = b.comments ? b.comments.length : 0;
     return bComments - aComments;
   });
-};
 
 const filterPhotos = (photos, filterType) => {
   switch (filterType) {

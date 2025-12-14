@@ -6,8 +6,6 @@ import { getData } from './api.js';
 import { showErrorMessage } from './message.js';
 import { initFilters } from './filters.js';
 
-let photosData = [];
-
 const renderWithClear = (photos) => {
   const picturesContainer = document.querySelector('.pictures');
   const pictureElements = picturesContainer.querySelectorAll('.picture');
@@ -22,7 +20,6 @@ const renderWithClear = (photos) => {
 const initApp = () => {
   getData()
     .then((photos) => {
-      photosData = photos;
       renderPictures(photos);
       initFilters(photos, renderWithClear);
     })
