@@ -10,6 +10,8 @@ const fileField = document.querySelector('.img-upload__input');
 const hashtagField = document.querySelector('.text__hashtags');
 const commentField = document.querySelector('.text__description');
 const submitButton = document.querySelector('.img-upload__submit');
+const preview = document.querySelector('.img-upload__preview img');
+const effectsPreviews = document.querySelectorAll('.effects__preview');
 
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
@@ -69,6 +71,33 @@ const blockSubmitButton = () => {
 const unblockSubmitButton = () => {
   submitButton.disabled = false;
   submitButton.textContent = 'Опубликовать';
+};
+
+const isValidFileType = (file) => {
+  const fileName = file.name.toLowerCase();
+  return FILE_TYPES.some((type) => fileName.endsWith(type));
+};
+
+const createPreviewUrl = (file) => URL.createObjectURL(file);
+
+const updatePreview = (fileUrl) => {
+  if (preview) {
+    preview.src = fileUrl;
+  }
+
+  if (effectsPreviews.length > 0) {
+    effectsPreviews.forEach((effectPreview) => {
+      if (fileUrl && fileUrl.startsWith('blob:')) {
+        effectPreview.style.backgroundImage = `url(${fileUrl})`;
+      }
+    });
+  }
+};
+
+const cleanupObjectUrls = () => {
+  if (preview && preview.src && preview.src.startsWith('blob:')) {
+    URL.revokeObjectURL(preview.src);
+  }
 };
 
 const setupValidation = () => {
@@ -155,7 +184,10 @@ const showModal = () => {
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
   document.addEventListener('keydown', onDocumentKeydown);
-  pristine.reset();
+  
+  if (pristine) {
+    pristine.reset();
+  }
 };
 
 const hideModal = () => {
@@ -163,7 +195,22 @@ const hideModal = () => {
   resetScale();
   resetEffects();
   destroyEffects();
-  pristine.reset();
+  
+  if (pristine) {
+    pristine.reset();
+  }
+  
+  cleanupObjectUrls();
+  
+  if (preview) {
+    preview.src = 'img/upload-default-image.jpg';
+  }
+  
+  if (effectsPreviews.length > 0) {
+    effectsPreviews.forEach((effectPreview) => {
+      effectPreview.style.backgroundImage = '';
+    });
+  }
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
@@ -174,15 +221,22 @@ const hideModal = () => {
 
 const onFileInputChange = () => {
   const file = fileField.files[0];
-  const fileName = file.name.toLowerCase();
+  
+  if (!file) {
+    return;
+  }
 
-  const matches = FILE_TYPES.some((type) => fileName.endsWith(type));
-
-  if (!matches) {
+  if (!isValidFileType(file)) {
     showErrorMessage(ErrorText.INVALID_FILE_TYPE);
     fileField.value = '';
     return;
   }
+
+  cleanupObjectUrls();
+
+  const fileUrl = createPreviewUrl(file);
+  
+  updatePreview(fileUrl);
 
   showModal();
 
