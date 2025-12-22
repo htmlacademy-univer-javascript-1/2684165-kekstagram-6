@@ -10,6 +10,8 @@ const fileField = document.querySelector('.img-upload__input');
 const hashtagField = document.querySelector('.text__hashtags');
 const commentField = document.querySelector('.text__description');
 const submitButton = document.querySelector('.img-upload__submit');
+const imgPreview = document.querySelector('.img-upload__preview img');
+const effectsPreviews = document.querySelectorAll('.effects__preview');
 
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
@@ -71,6 +73,91 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
+const isValidFileType = (file) => {
+  const fileName = file.name.toLowerCase();
+  return FILE_TYPES.some((type) => fileName.endsWith(type));
+};
+
+const createPreviewUrl = (file) => URL.createObjectURL(file);
+
+const updateImagePreview = (fileUrl) => {
+  if (imgPreview) {
+    imgPreview.src = fileUrl;
+  }
+
+  if (effectsPreviews.length > 0) {
+    effectsPreviews.forEach((effectPreview) => {
+      if (fileUrl && fileUrl.startsWith('blob:')) {
+        effectPreview.style.backgroundImage = `url(${fileUrl})`;
+      }
+    });
+  }
+};
+
+const cleanupObjectUrls = () => {
+  if (imgPreview && imgPreview.src && imgPreview.src.startsWith('blob:')) {
+    URL.revokeObjectURL(imgPreview.src);
+  }
+};
+
+const onDocumentKeydown = (evt) => {
+  if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
+    evt.preventDefault();
+    onCancelButtonClick();
+  }
+};
+
+const hideModal = () => {
+  form.reset();
+  resetScale();
+  resetEffects();
+  destroyEffects();
+
+  if (pristine) {
+    pristine.reset();
+  }
+
+  cleanupObjectUrls();
+
+  if (imgPreview) {
+    imgPreview.src = 'img/upload-default-image.jpg';
+  }
+
+  if (effectsPreviews.length > 0) {
+    effectsPreviews.forEach((effectPreview) => {
+      effectPreview.style.backgroundImage = '';
+    });
+  }
+
+  overlay.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onDocumentKeydown);
+
+  fileField.value = '';
+};
+
+const onCancelButtonClick = () => {
+  hideModal();
+};
+
+const onFieldFocus = () => {
+  document.removeEventListener('keydown', onDocumentKeydown);
+};
+
+const onFieldBlur = () => {
+  document.addEventListener('keydown', onDocumentKeydown);
+};
+
+const showModal = () => {
+  overlay.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+
+  if (pristine) {
+    pristine.reset();
+  }
+};
+
 const setupValidation = () => {
   if (typeof Pristine === 'undefined') {
     return;
@@ -125,14 +212,6 @@ const setupLiveValidation = () => {
   });
 };
 
-const onFieldFocus = () => {
-  document.removeEventListener('keydown', onDocumentKeydown);
-};
-
-const onFieldBlur = () => {
-  document.addEventListener('keydown', onDocumentKeydown);
-};
-
 const setupFieldFocusHandlers = () => {
   hashtagField.addEventListener('focus', onFieldFocus);
   hashtagField.addEventListener('blur', onFieldBlur);
@@ -140,54 +219,24 @@ const setupFieldFocusHandlers = () => {
   commentField.addEventListener('blur', onFieldBlur);
 };
 
-const onCancelButtonClick = () => {
-  hideModal();
-};
-
-const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
-    evt.preventDefault();
-    onCancelButtonClick();
-  }
-};
-
-const showModal = () => {
-  overlay.classList.remove('hidden');
-  document.body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
-  pristine.reset();
-};
-
-const hideModal = () => {
-  form.reset();
-  resetScale();
-  resetEffects();
-  destroyEffects();
-  pristine.reset();
-
-  overlay.classList.add('hidden');
-  document.body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onDocumentKeydown);
-
-  fileField.value = '';
-};
-
 const onFileInputChange = () => {
   const file = fileField.files[0];
-  const fileName = file.name.toLowerCase();
 
-  const matches = FILE_TYPES.some((type) => fileName.endsWith(type));
+  if (!file) {
+    return;
+  }
 
-  if (!matches) {
+  if (!isValidFileType(file)) {
     showErrorMessage(ErrorText.INVALID_FILE_TYPE);
     fileField.value = '';
     return;
   }
 
-  showModal();
+  cleanupObjectUrls();
 
-  const preview = document.querySelector('.img-upload__preview img');
-  preview.src = URL.createObjectURL(file);
+  const fileUrl = createPreviewUrl(file);
+  updateImagePreview(fileUrl);
+  showModal();
 };
 
 const showErrorOverlay = (errorText) => {
@@ -243,14 +292,14 @@ const showErrorOverlay = (errorText) => {
     }
   };
 
+  document.addEventListener('keydown', onEscapePress);
+
   errorOverlay.querySelector('.error-overlay__button').addEventListener('click', closeErrorOverlay);
   errorOverlay.addEventListener('click', (evt) => {
     if (evt.target === errorOverlay) {
       closeErrorOverlay();
     }
   });
-
-  document.addEventListener('keydown', onEscapePress);
 };
 
 const onFormSubmit = async (evt) => {

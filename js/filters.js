@@ -12,11 +12,9 @@ const FilterType = {
   DISCUSSED: 'filter-discussed',
 };
 
-const debounce = (callback, timeoutDelay = DEBOUNCE_DELAY) => {
-  return (...rest) => {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => callback.apply(this, rest), timeoutDelay);
-  };
+const debounce = (callback, timeoutDelay = DEBOUNCE_DELAY) => (...rest) => {
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => callback.apply(this, rest), timeoutDelay);
 };
 
 const getRandomPhotos = (photos) => {

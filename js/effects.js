@@ -192,6 +192,18 @@ const destroyEffects = () => {
   effectsList.removeEventListener('change', onEffectChange);
 };
 
+const updateEffectsPreviews = (imageUrl) => {
+  const effectsPreviews = document.querySelectorAll('.effects__preview');
+
+  effectsPreviews.forEach((previewElement) => {
+    if (imageUrl) {
+      previewElement.style.backgroundImage = `url(${imageUrl})`;
+    } else {
+      previewElement.style.backgroundImage = '';
+    }
+  });
+};
+
 const initEffects = () => {
   if (!isNoUiSliderAvailable()) {
     effectLevel.classList.add('hidden');
@@ -205,6 +217,11 @@ const initEffects = () => {
   effectsList.addEventListener('change', onEffectChange);
 
   resetEffects();
+
+  const previewImage = document.querySelector('.img-upload__preview img');
+  if (previewImage && previewImage.src) {
+    updateEffectsPreviews(previewImage.src);
+  }
 };
 
-export { initEffects, resetEffects, destroyEffects };
+export { initEffects, resetEffects, destroyEffects, updateEffectsPreviews };
