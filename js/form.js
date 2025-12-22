@@ -100,6 +100,10 @@ const cleanupObjectUrls = () => {
   }
 };
 
+const onCancelButtonClick = () => {
+  hideModal();
+};
+
 const onDocumentKeydown = (evt) => {
   if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
     evt.preventDefault();
@@ -134,10 +138,6 @@ const hideModal = () => {
   document.removeEventListener('keydown', onDocumentKeydown);
 
   fileField.value = '';
-};
-
-const onCancelButtonClick = () => {
-  hideModal();
 };
 
 const onFieldFocus = () => {
@@ -281,15 +281,15 @@ const showErrorOverlay = (errorText) => {
   errorOverlay.appendChild(errorContent);
   document.body.appendChild(errorOverlay);
 
-  const closeErrorOverlay = () => {
-    errorOverlay.remove();
-    document.removeEventListener('keydown', onEscapePress);
-  };
-
   const onEscapePress = (evt) => {
     if (evt.key === 'Escape') {
       closeErrorOverlay();
     }
+  };
+
+  const closeErrorOverlay = () => {
+    errorOverlay.remove();
+    document.removeEventListener('keydown', onEscapePress);
   };
 
   document.addEventListener('keydown', onEscapePress);
