@@ -1,7 +1,9 @@
+import { openUploadForm } from './form.js';
+
 const messageTemplate = document.querySelector('#error').content.querySelector('.error');
 const successTemplate = document.querySelector('#success').content.querySelector('.success');
 
-const showMessage = (template, buttonClass, closeCallback = null) => {
+const showMessage = (template, buttonClass, closeCallback = null, extraCallback = null) => {
   const messageElement = template.cloneNode(true);
   const messageButton = messageElement.querySelector(buttonClass);
 
@@ -19,22 +21,37 @@ const showMessage = (template, buttonClass, closeCallback = null) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
       closeMessage();
+      if (typeof extraCallback === 'function') {
+        extraCallback();
+      }
     }
   };
 
   const onOutsideClick = (evt) => {
     if (!evt.target.closest(`.${template.classList[0]}__inner`)) {
       closeMessage();
+      if (typeof extraCallback === 'function') {
+        extraCallback();
+      }
     }
   };
 
   const onMessageClick = (evt) => {
     if (!evt.target.closest(`.${template.classList[0]}__inner`)) {
       closeMessage();
+      if (typeof extraCallback === 'function') {
+        extraCallback();
+      }
     }
   };
 
-  messageButton.addEventListener('click', closeMessage);
+  messageButton.addEventListener('click', () => {
+    closeMessage();
+    if (typeof extraCallback === 'function') {
+      extraCallback();
+    }
+  });
+
   messageElement.addEventListener('click', onMessageClick);
   document.addEventListener('keydown', onDocumentKeydown);
 
@@ -59,13 +76,27 @@ const showErrorMessage = (text = 'Не удалось загрузить дан�
   const template = messageTemplate.cloneNode(true);
   template.querySelector('.error__title').textContent = text;
 
-  if (hideForm) {
-    const closeFormCallback = () => {
-      hideModal();
-    };
-    showMessage(template, '.error__button', closeFormCallback);
+  if (text.includes('JPG') || text.includes('PNG') || text.includes('формат')) {
+    const errorButton = template.querySelector('.error__button');
+    errorButton.textContent = 'Загрузить другой файл';
+    
+    if (hideForm) {
+      const closeFormCallback = () => {
+        hideModal();
+      };
+      showMessage(template, '.error__button', closeFormCallback, openUploadForm);
+    } else {
+      showMessage(template, '.error__button', null, openUploadForm);
+    }
   } else {
-    showMessage(template, '.error__button');
+    if (hideForm) {
+      const closeFormCallback = () => {
+        hideModal();
+      };
+      showMessage(template, '.error__button', closeFormCallback);
+    } else {
+      showMessage(template, '.error__button');
+    }
   }
 };
 

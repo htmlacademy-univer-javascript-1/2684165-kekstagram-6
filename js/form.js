@@ -238,7 +238,7 @@ const onFileInputChange = () => {
   }
 
   if (!isValidFileType(file, FILE_TYPES)) {
-    showErrorMessage(ErrorText.INVALID_FILE_TYPE, false);
+    showErrorMessage(ErrorText.INVALID_FILE_TYPE, true);
     fileField.value = '';
     return;
   }
@@ -301,4 +301,8 @@ const initForm = () => {
   setupEventListeners();
 };
 
-export { initForm, hideModal };
+const openUploadForm = () => {
+  fileField.click();
+};
+
+export { initForm, hideModal, openUploadForm };
