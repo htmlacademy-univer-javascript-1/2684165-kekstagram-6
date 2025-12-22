@@ -2,6 +2,13 @@ import { resetScale } from './scale.js';
 import { resetEffects, destroyEffects } from './effects.js';
 import { sendData } from './api.js';
 import { showErrorMessage, showSuccessMessage } from './message.js';
+import { 
+  isEscapeKey, 
+  isValidFileType, 
+  createObjectURL, 
+  revokeObjectURL,
+  smoothScrollToElement 
+} from './utils.js';
 
 const form = document.querySelector('.img-upload__form');
 const overlay = document.querySelector('.img-upload__overlay');
@@ -29,6 +36,17 @@ const ErrorText = {
 };
 
 let pristine;
+
+const handleModalEscape = (evt) => {
+  if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
+    evt.preventDefault();
+    hideModal();
+  }
+};
+
+const onCancelButtonClick = () => {
+  hideModal();
+};
 
 const normalizeTags = (tagString) => tagString
   .trim()
@@ -73,12 +91,7 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
-const isValidFileType = (file) => {
-  const fileName = file.name.toLowerCase();
-  return FILE_TYPES.some((type) => fileName.endsWith(type));
-};
-
-const createPreviewUrl = (file) => URL.createObjectURL(file);
+const createPreviewUrl = (file) => createObjectURL(file);
 
 const updateImagePreview = (fileUrl) => {
   if (imgPreview) {
@@ -96,18 +109,7 @@ const updateImagePreview = (fileUrl) => {
 
 const cleanupObjectUrls = () => {
   if (imgPreview && imgPreview.src && imgPreview.src.startsWith('blob:')) {
-    URL.revokeObjectURL(imgPreview.src);
-  }
-};
-
-const onCancelButtonClick = () => {
-  hideModal();
-};
-
-const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
-    evt.preventDefault();
-    onCancelButtonClick();
+    revokeObjectURL(imgPreview.src);
   }
 };
 
@@ -135,23 +137,23 @@ const hideModal = () => {
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onDocumentKeydown);
+  document.removeEventListener('keydown', handleModalEscape);
 
   fileField.value = '';
 };
 
 const onFieldFocus = () => {
-  document.removeEventListener('keydown', onDocumentKeydown);
+  document.removeEventListener('keydown', handleModalEscape);
 };
 
 const onFieldBlur = () => {
-  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('keydown', handleModalEscape);
 };
 
 const showModal = () => {
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('keydown', handleModalEscape);
 
   if (pristine) {
     pristine.reset();
@@ -226,7 +228,7 @@ const onFileInputChange = () => {
     return;
   }
 
-  if (!isValidFileType(file)) {
+  if (!isValidFileType(file, FILE_TYPES)) {
     showErrorMessage(ErrorText.INVALID_FILE_TYPE);
     fileField.value = '';
     return;
@@ -239,12 +241,29 @@ const onFileInputChange = () => {
   showModal();
 };
 
+let errorOverlay = null;
+
+const handleErrorOverlayEscape = (evt) => {
+  if (isEscapeKey(evt)) {
+    closeErrorOverlay();
+    openUploadForm();
+  }
+};
+
 const openUploadForm = () => {
   fileField.click();
 };
 
+const closeErrorOverlay = () => {
+  if (errorOverlay) {
+    errorOverlay.remove();
+    errorOverlay = null;
+  }
+  document.removeEventListener('keydown', handleErrorOverlayEscape);
+};
+
 const showErrorOverlay = (errorText) => {
-  const errorOverlay = document.createElement('div');
+  errorOverlay = document.createElement('div');
   errorOverlay.className = 'error-overlay';
   errorOverlay.style.cssText = `
     position: fixed;
@@ -285,25 +304,13 @@ const showErrorOverlay = (errorText) => {
   errorOverlay.appendChild(errorContent);
   document.body.appendChild(errorOverlay);
 
-  const onEscapePress = (evt) => {
-    if (evt.key === 'Escape') {
-      closeErrorOverlay();
-      openUploadForm();
-    }
-  };
-
-  const closeErrorOverlay = () => {
-    errorOverlay.remove();
-    document.removeEventListener('keydown', onEscapePress);
-  };
-
-  document.addEventListener('keydown', onEscapePress);
+  document.addEventListener('keydown', handleErrorOverlayEscape);
 
   errorOverlay.querySelector('.error-overlay__button').addEventListener('click', () => {
     closeErrorOverlay();
     openUploadForm();
   });
-
+  
   errorOverlay.addEventListener('click', (evt) => {
     if (evt.target === errorOverlay) {
       closeErrorOverlay();
@@ -320,7 +327,7 @@ const onFormSubmit = async (evt) => {
   if (!isValid) {
     const firstError = form.querySelector('.img-upload__field-wrapper--error');
     if (firstError) {
-      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      smoothScrollToElement(firstError, { behavior: 'smooth', block: 'center' });
     }
     return;
   }

@@ -1,3 +1,5 @@
+import { isEscapeKey } from './utils.js';
+
 const bigPicture = document.querySelector('.big-picture');
 const closeButton = bigPicture.querySelector('.big-picture__cancel');
 const socialComments = bigPicture.querySelector('.social__comments');
@@ -63,6 +65,12 @@ const renderComments = (comments) => {
   renderCommentsPortion();
 };
 
+const handleFullscreenEscape = (evt) => {
+  if (isEscapeKey(evt) && !bigPicture.classList.contains('hidden')) {
+    closeFullscreenPicture();
+  }
+};
+
 const openFullscreenPicture = (pictureData) => {
   const { url, description, likes, comments } = pictureData;
 
@@ -74,27 +82,24 @@ const openFullscreenPicture = (pictureData) => {
 
   renderComments(comments);
 
-
   bigPicture.classList.remove('hidden');
   document.body.classList.add('modal-open');
+  
+  document.addEventListener('keydown', handleFullscreenEscape);
 };
 
 const closeFullscreenPicture = () => {
   bigPicture.classList.add('hidden');
   document.body.classList.remove('modal-open');
   resetComments();
+  
+  document.removeEventListener('keydown', handleFullscreenEscape);
 };
 
 commentsLoader.addEventListener('click', loadMoreComments);
 
 closeButton.addEventListener('click', () => {
   closeFullscreenPicture();
-});
-
-document.addEventListener('keydown', (evt) => {
-  if (evt.key === 'Escape' && !bigPicture.classList.contains('hidden')) {
-    closeFullscreenPicture();
-  }
 });
 
 export { openFullscreenPicture };
