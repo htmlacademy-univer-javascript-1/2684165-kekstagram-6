@@ -4,8 +4,6 @@ const successTemplate = document.querySelector('#success').content.querySelector
 const showMessage = (template, buttonClass, closeCallback = null) => {
   const messageElement = template.cloneNode(true);
   const messageButton = messageElement.querySelector(buttonClass);
-  const template = messageTemplate.cloneNode(true);
-  template.querySelector('.error__title').textContent = text;
 
   const onDocumentKeydown = (evt) => {
     if (evt.key === 'Escape') {
