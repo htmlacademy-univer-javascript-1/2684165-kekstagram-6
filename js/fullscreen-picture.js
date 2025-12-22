@@ -91,13 +91,13 @@ const openFullscreenPicture = (pictureData) => {
 
   bigPicture.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  
+
   fullscreenEscapeHandler = (evt) => {
     if (isEscapeKey(evt) && !bigPicture.classList.contains('hidden')) {
       closeFullscreenPicture();
     }
   };
-  
+
   document.addEventListener('keydown', fullscreenEscapeHandler);
 };
 
