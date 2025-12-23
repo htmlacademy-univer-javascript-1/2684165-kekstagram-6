@@ -2,6 +2,13 @@ import { resetScale } from './scale.js';
 import { resetEffects, destroyEffects } from './effects.js';
 import { sendData } from './api.js';
 import { showErrorMessage, showSuccessMessage } from './message.js';
+import {
+  isEscapeKey,
+  isValidFileType,
+  createObjectURL,
+  revokeObjectURL,
+  smoothScrollToElement
+} from './utils.js';
 
 const form = document.querySelector('.img-upload__form');
 const overlay = document.querySelector('.img-upload__overlay');
@@ -29,6 +36,7 @@ const ErrorText = {
 };
 
 let pristine;
+let modalEscapeHandler = null;
 
 const normalizeTags = (tagString) => tagString
   .trim()
@@ -73,12 +81,7 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
-const isValidFileType = (file) => {
-  const fileName = file.name.toLowerCase();
-  return FILE_TYPES.some((type) => fileName.endsWith(type));
-};
-
-const createPreviewUrl = (file) => URL.createObjectURL(file);
+const createPreviewUrl = (file) => createObjectURL(file);
 
 const updateImagePreview = (fileUrl) => {
   if (imgPreview) {
@@ -96,14 +99,19 @@ const updateImagePreview = (fileUrl) => {
 
 const cleanupObjectUrls = () => {
   if (imgPreview && imgPreview.src && imgPreview.src.startsWith('blob:')) {
-    URL.revokeObjectURL(imgPreview.src);
+    revokeObjectURL(imgPreview.src);
   }
 };
 
-const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
-    evt.preventDefault();
-    onCancelButtonClick();
+const onFieldFocus = () => {
+  if (modalEscapeHandler) {
+    document.removeEventListener('keydown', modalEscapeHandler);
+  }
+};
+
+const onFieldBlur = () => {
+  if (modalEscapeHandler) {
+    document.addEventListener('keydown', modalEscapeHandler);
   }
 };
 
@@ -131,7 +139,11 @@ const hideModal = () => {
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onDocumentKeydown);
+
+  if (modalEscapeHandler) {
+    document.removeEventListener('keydown', modalEscapeHandler);
+    modalEscapeHandler = null;
+  }
 
   fileField.value = '';
 };
@@ -140,18 +152,17 @@ const onCancelButtonClick = () => {
   hideModal();
 };
 
-const onFieldFocus = () => {
-  document.removeEventListener('keydown', onDocumentKeydown);
-};
-
-const onFieldBlur = () => {
-  document.addEventListener('keydown', onDocumentKeydown);
-};
-
 const showModal = () => {
+  modalEscapeHandler = (evt) => {
+    if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
+      evt.preventDefault();
+      hideModal();
+    }
+  };
+
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('keydown', modalEscapeHandler);
 
   if (pristine) {
     pristine.reset();
@@ -226,8 +237,8 @@ const onFileInputChange = () => {
     return;
   }
 
-  if (!isValidFileType(file)) {
-    showErrorMessage(ErrorText.INVALID_FILE_TYPE);
+  if (!isValidFileType(file, FILE_TYPES)) {
+    showErrorMessage(ErrorText.INVALID_FILE_TYPE, true);
     fileField.value = '';
     return;
   }
@@ -239,69 +250,6 @@ const onFileInputChange = () => {
   showModal();
 };
 
-const showErrorOverlay = (errorText) => {
-  const errorOverlay = document.createElement('div');
-  errorOverlay.className = 'error-overlay';
-  errorOverlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
-
-  const errorContent = document.createElement('div');
-  errorContent.className = 'error-overlay__content';
-  errorContent.style.cssText = `
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    max-width: 400px;
-  `;
-
-  errorContent.innerHTML = `
-    <h3 style="margin-bottom: 15px; color: #ff6b6b;">Ошибка загрузки</h3>
-    <p style="margin-bottom: 20px;">${errorText}</p>
-    <button type="button" class="error-overlay__button" style="
-      background-color: #ff6b6b;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-    ">Понятно</button>
-  `;
-
-  errorOverlay.appendChild(errorContent);
-  document.body.appendChild(errorOverlay);
-
-  const closeErrorOverlay = () => {
-    errorOverlay.remove();
-    document.removeEventListener('keydown', onEscapePress);
-  };
-
-  const onEscapePress = (evt) => {
-    if (evt.key === 'Escape') {
-      closeErrorOverlay();
-    }
-  };
-
-  document.addEventListener('keydown', onEscapePress);
-
-  errorOverlay.querySelector('.error-overlay__button').addEventListener('click', closeErrorOverlay);
-  errorOverlay.addEventListener('click', (evt) => {
-    if (evt.target === errorOverlay) {
-      closeErrorOverlay();
-    }
-  });
-};
-
 const onFormSubmit = async (evt) => {
   evt.preventDefault();
 
@@ -310,7 +258,7 @@ const onFormSubmit = async (evt) => {
   if (!isValid) {
     const firstError = form.querySelector('.img-upload__field-wrapper--error');
     if (firstError) {
-      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      smoothScrollToElement(firstError, { behavior: 'smooth', block: 'center' });
     }
     return;
   }
@@ -334,7 +282,7 @@ const onFormSubmit = async (evt) => {
     }, 300);
 
   } catch (error) {
-    showErrorOverlay(error.message);
+    showErrorMessage(error.message, false);
   } finally {
     unblockSubmitButton();
   }
@@ -353,4 +301,8 @@ const initForm = () => {
   setupEventListeners();
 };
 
-export { initForm, hideModal };
+const openUploadForm = () => {
+  fileField.click();
+};
+
+export { initForm, hideModal, openUploadForm };

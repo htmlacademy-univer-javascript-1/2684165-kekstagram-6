@@ -1,3 +1,5 @@
+import { isEscapeKey } from './utils.js';
+
 const bigPicture = document.querySelector('.big-picture');
 const closeButton = bigPicture.querySelector('.big-picture__cancel');
 const socialComments = bigPicture.querySelector('.social__comments');
@@ -7,6 +9,8 @@ const commentsLoader = bigPicture.querySelector('.comments-loader');
 let currentComments = [];
 let commentsShown = 0;
 const COMMENTS_PER_STEP = 5;
+
+let fullscreenEscapeHandler = null;
 
 const createComment = (comment) => {
   const commentElement = document.createElement('li');
@@ -63,6 +67,17 @@ const renderComments = (comments) => {
   renderCommentsPortion();
 };
 
+const closeFullscreenPicture = () => {
+  bigPicture.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  resetComments();
+
+  if (fullscreenEscapeHandler) {
+    document.removeEventListener('keydown', fullscreenEscapeHandler);
+    fullscreenEscapeHandler = null;
+  }
+};
+
 const openFullscreenPicture = (pictureData) => {
   const { url, description, likes, comments } = pictureData;
 
@@ -74,27 +89,22 @@ const openFullscreenPicture = (pictureData) => {
 
   renderComments(comments);
 
-
   bigPicture.classList.remove('hidden');
   document.body.classList.add('modal-open');
-};
 
-const closeFullscreenPicture = () => {
-  bigPicture.classList.add('hidden');
-  document.body.classList.remove('modal-open');
-  resetComments();
+  fullscreenEscapeHandler = (evt) => {
+    if (isEscapeKey(evt) && !bigPicture.classList.contains('hidden')) {
+      closeFullscreenPicture();
+    }
+  };
+
+  document.addEventListener('keydown', fullscreenEscapeHandler);
 };
 
 commentsLoader.addEventListener('click', loadMoreComments);
 
 closeButton.addEventListener('click', () => {
   closeFullscreenPicture();
-});
-
-document.addEventListener('keydown', (evt) => {
-  if (evt.key === 'Escape' && !bigPicture.classList.contains('hidden')) {
-    closeFullscreenPicture();
-  }
 });
 
 export { openFullscreenPicture };

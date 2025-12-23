@@ -1,10 +1,10 @@
+import { debounce, DEBOUNCE_DELAY, shuffleArray } from './utils.js';
+
 const RANDOM_PHOTOS_COUNT = 10;
-const DEBOUNCE_DELAY = 500;
 
 const filtersContainer = document.querySelector('.img-filters');
 const filterButtons = document.querySelectorAll('.img-filters__button');
 let currentFilter = 'filter-default';
-let debounceTimeout = null;
 
 const FilterType = {
   DEFAULT: 'filter-default',
@@ -12,13 +12,8 @@ const FilterType = {
   DISCUSSED: 'filter-discussed',
 };
 
-const debounce = (callback, timeoutDelay = DEBOUNCE_DELAY) => (...rest) => {
-  clearTimeout(debounceTimeout);
-  debounceTimeout = setTimeout(() => callback.apply(this, rest), timeoutDelay);
-};
-
 const getRandomPhotos = (photos) => {
-  const shuffledPhotos = [...photos].sort(() => Math.random() - 0.5);
+  const shuffledPhotos = shuffleArray([...photos]);
   return shuffledPhotos.slice(0, RANDOM_PHOTOS_COUNT);
 };
 
@@ -68,7 +63,7 @@ const onFilterChange = (callback, photos) => (evt) => {
 const initFilters = (photos, renderCallback) => {
   filtersContainer.classList.remove('img-filters--inactive');
 
-  const debouncedFilterHandler = debounce(onFilterChange(renderCallback, photos));
+  const debouncedFilterHandler = debounce(onFilterChange(renderCallback, photos), DEBOUNCE_DELAY);
   filtersContainer.addEventListener('click', debouncedFilterHandler);
 };
 
