@@ -65,17 +65,17 @@ const onFilterButtonClick = (evt) => {
 
 const initFilters = (photos, callback) => {
   filtersContainer.classList.remove('img-filters--inactive');
-  
+
   currentPhotos = photos;
   renderCallback = callback;
-  
+
   if (debouncedFilterHandler) {
     filtersContainer.removeEventListener('click', debouncedFilterHandler);
   }
-  
+
   debouncedFilterHandler = debounce(onFilterButtonClick, DEBOUNCE_DELAY);
   filtersContainer.addEventListener('click', debouncedFilterHandler);
-  
+
   filterButtons.forEach((button) => {
     button.classList.remove('img-filters__button--active');
   });
