@@ -4,7 +4,7 @@ import { initScale } from './scale.js';
 import { initEffects } from './effects.js';
 import { getData } from './api.js';
 import { showErrorMessage } from './message.js';
-import { initFilters} from './filters.js';
+import { initFilters, updateFilterPhotos } from './filters.js';
 
 let photosData = [];
 
@@ -40,6 +40,12 @@ const initApp = () => {
     if (effectLevel) {
       effectLevel.classList.add('hidden');
     }
+  }
+};
+
+const refreshFilters = () => {
+  if (photosData.length > 0) {
+    updateFilterPhotos(photosData);
   }
 };
 
