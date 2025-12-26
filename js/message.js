@@ -1,4 +1,5 @@
 import { openUploadForm } from './form.js';
+import { isEscapeKey } from './utils.js';
 
 const messageTemplate = document.querySelector('#error').content.querySelector('.error');
 const successTemplate = document.querySelector('#success').content.querySelector('.success');
@@ -46,7 +47,7 @@ const showMessage = (template, buttonClass, closeCallback = null, extraCallback 
   };
 
   handlers.documentKeydown = (evt) => {
-    if (evt.key === 'Escape') {
+    if (isEscapeKey(evt)) {
       evt.preventDefault();
       closeMessage();
       if (typeof extraCallback === 'function') {
@@ -100,7 +101,7 @@ const showErrorMessage = (text = 'Не удалось загрузить дан�
   if (text.includes('JPG') || text.includes('PNG') || text.includes('формат')) {
     const errorButton = template.querySelector('.error__button');
     errorButton.textContent = 'Загрузить другой файл';
-
+    
     if (hideForm) {
       const closeFormCallback = () => {
         hideModal();

@@ -75,47 +75,40 @@ const applyEffect = (value) => {
 };
 
 const initSlider = () => {
-  if (!isNoUiSliderAvailable()) {
+  if (!isNoUiSliderAvailable() || !effectLevelSlider) {
     return;
   }
 
-  if (effectLevelSlider) {
-    try {
-      slider = noUiSlider.create(effectLevelSlider, {
-        range: {
-          min: 0,
-          max: 100,
-        },
-        start: 100,
-        step: 1,
-        connect: 'lower',
-        format: {
-          to: function (value) {
-            if (currentEffect === 'chrome' || currentEffect === 'sepia') {
-              return value.toFixed(1);
-            } else if (currentEffect === 'marvin') {
-              return Math.round(value);
-            } else if (currentEffect === 'phobos' || currentEffect === 'heat') {
-              return value.toFixed(1);
-            }
-            return value;
-          },
-          from: function (value) {
-            return parseFloat(value);
-          },
-        },
-      });
+  slider = noUiSlider.create(effectLevelSlider, {
+    range: {
+      min: 0,
+      max: 100,
+    },
+    start: 100,
+    step: 1,
+    connect: 'lower',
+    format: {
+      to: function (value) {
+        if (currentEffect === 'chrome' || currentEffect === 'sepia') {
+          return value.toFixed(1);
+        } else if (currentEffect === 'marvin') {
+          return Math.round(value);
+        } else if (currentEffect === 'phobos' || currentEffect === 'heat') {
+          return value.toFixed(1);
+        }
+        return value;
+      },
+      from: function (value) {
+        return parseFloat(value);
+      },
+    },
+  });
 
-      slider.on('update', (values, handle) => {
-        const value = values[handle];
-        effectLevelValue.value = value;
-        applyEffect(value);
-      });
-
-    } catch (error) {
-      // Ошибка при создании noUiSlider
-    }
-  }
+  slider.on('update', (values) => {
+    const value = values[0];
+    effectLevelValue.value = value;
+    applyEffect(value);
+  });
 };
 
 const updateSlider = () => {
@@ -124,7 +117,6 @@ const updateSlider = () => {
   }
 
   const effect = Effects[currentEffect];
-
   slider.updateOptions({
     range: {
       min: effect.min,
@@ -166,7 +158,7 @@ const resetEffects = () => {
   toggleSliderVisibility();
   effectLevelValue.value = '';
 
-  const noneEffect = document.querySelector('#effect-none');
+  const noneEffect = effectsList.querySelector('#effect-none');
   if (noneEffect) {
     noneEffect.checked = true;
   }
@@ -193,7 +185,7 @@ const destroyEffects = () => {
 };
 
 const updateEffectsPreviews = (imageUrl) => {
-  const effectsPreviews = document.querySelectorAll('.effects__preview');
+  const effectsPreviews = effectsList.querySelectorAll('.effects__preview');
 
   effectsPreviews.forEach((previewElement) => {
     if (imageUrl) {
@@ -211,11 +203,8 @@ const initEffects = () => {
   }
 
   effectLevel.classList.add('hidden');
-
   initSlider();
-
   effectsList.addEventListener('change', onEffectChange);
-
   resetEffects();
 
   const previewImage = document.querySelector('.img-upload__preview img');

@@ -2,23 +2,13 @@ import { resetScale } from './scale.js';
 import { resetEffects, destroyEffects } from './effects.js';
 import { sendData } from './api.js';
 import { showErrorMessage, showSuccessMessage } from './message.js';
-import {
-  isEscapeKey,
-  isValidFileType,
-  createObjectURL,
-  revokeObjectURL,
-  smoothScrollToElement
+import { 
+  isEscapeKey, 
+  checkFileType, 
+  createObjectURLFromFile, 
+  revokeObjectURLIfExists,
+  scrollToElementSmoothly 
 } from './utils.js';
-
-const form = document.querySelector('.img-upload__form');
-const overlay = document.querySelector('.img-upload__overlay');
-const cancelButton = document.querySelector('.img-upload__cancel');
-const fileField = document.querySelector('.img-upload__input');
-const hashtagField = document.querySelector('.text__hashtags');
-const commentField = document.querySelector('.text__description');
-const submitButton = document.querySelector('.img-upload__submit');
-const imgPreview = document.querySelector('.img-upload__preview img');
-const effectsPreviews = document.querySelectorAll('.effects__preview');
 
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
@@ -35,8 +25,20 @@ const ErrorText = {
   INVALID_FILE_TYPE: 'Загрузите изображение в формате JPG или PNG',
 };
 
+const form = document.querySelector('.img-upload__form');
+const overlay = document.querySelector('.img-upload__overlay');
+const cancelButton = overlay.querySelector('.img-upload__cancel');
+const fileField = form.querySelector('.img-upload__input');
+const hashtagField = form.querySelector('.text__hashtags');
+const commentField = form.querySelector('.text__description');
+const submitButton = form.querySelector('.img-upload__submit');
+const imgPreview = overlay.querySelector('.img-upload__preview img');
+const effectsPreviews = overlay.querySelectorAll('.effects__preview');
+const scaleValueElement = overlay.querySelector('.scale__control--value');
+const effectLevelValueElement = overlay.querySelector('.effect-level__value');
+
 let pristine;
-let modalEscapeHandler = null;
+let documentKeydownHandler = null;
 
 const normalizeTags = (tagString) => tagString
   .trim()
@@ -81,8 +83,6 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
-const createPreviewUrl = (file) => createObjectURL(file);
-
 const updateImagePreview = (fileUrl) => {
   if (imgPreview) {
     imgPreview.src = fileUrl;
@@ -99,19 +99,19 @@ const updateImagePreview = (fileUrl) => {
 
 const cleanupObjectUrls = () => {
   if (imgPreview && imgPreview.src && imgPreview.src.startsWith('blob:')) {
-    revokeObjectURL(imgPreview.src);
+    revokeObjectURLIfExists(imgPreview.src);
   }
 };
 
 const onFieldFocus = () => {
-  if (modalEscapeHandler) {
-    document.removeEventListener('keydown', modalEscapeHandler);
+  if (documentKeydownHandler) {
+    document.removeEventListener('keydown', documentKeydownHandler);
   }
 };
 
 const onFieldBlur = () => {
-  if (modalEscapeHandler) {
-    document.addEventListener('keydown', modalEscapeHandler);
+  if (documentKeydownHandler) {
+    document.addEventListener('keydown', documentKeydownHandler);
   }
 };
 
@@ -139,10 +139,10 @@ const hideModal = () => {
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-
-  if (modalEscapeHandler) {
-    document.removeEventListener('keydown', modalEscapeHandler);
-    modalEscapeHandler = null;
+  
+  if (documentKeydownHandler) {
+    document.removeEventListener('keydown', documentKeydownHandler);
+    documentKeydownHandler = null;
   }
 
   fileField.value = '';
@@ -153,7 +153,7 @@ const onCancelButtonClick = () => {
 };
 
 const showModal = () => {
-  modalEscapeHandler = (evt) => {
+  documentKeydownHandler = (evt) => {
     if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
       evt.preventDefault();
       hideModal();
@@ -162,7 +162,7 @@ const showModal = () => {
 
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  document.addEventListener('keydown', modalEscapeHandler);
+  document.addEventListener('keydown', documentKeydownHandler);
 
   if (pristine) {
     pristine.reset();
@@ -237,7 +237,7 @@ const onFileInputChange = () => {
     return;
   }
 
-  if (!isValidFileType(file, FILE_TYPES)) {
+  if (!checkFileType(file, FILE_TYPES)) {
     showErrorMessage(ErrorText.INVALID_FILE_TYPE, true);
     fileField.value = '';
     return;
@@ -245,7 +245,7 @@ const onFileInputChange = () => {
 
   cleanupObjectUrls();
 
-  const fileUrl = createPreviewUrl(file);
+  const fileUrl = createObjectURLFromFile(file);
   updateImagePreview(fileUrl);
   showModal();
 };
@@ -258,7 +258,7 @@ const onFormSubmit = async (evt) => {
   if (!isValid) {
     const firstError = form.querySelector('.img-upload__field-wrapper--error');
     if (firstError) {
-      smoothScrollToElement(firstError, { behavior: 'smooth', block: 'center' });
+      scrollToElementSmoothly(firstError, { behavior: 'smooth', block: 'center' });
     }
     return;
   }
@@ -267,12 +267,8 @@ const onFormSubmit = async (evt) => {
     blockSubmitButton();
 
     const formData = new FormData(form);
-
-    const scaleValue = document.querySelector('.scale__control--value').value;
-    const effectLevelValue = document.querySelector('.effect-level__value').value;
-
-    formData.append('scale', scaleValue);
-    formData.append('effect-level', effectLevelValue);
+    formData.append('scale', scaleValueElement.value);
+    formData.append('effect-level', effectLevelValueElement.value);
 
     await sendData(formData);
 
