@@ -101,7 +101,7 @@ const showErrorMessage = (text = 'Не удалось загрузить дан�
   if (text.includes('JPG') || text.includes('PNG') || text.includes('формат')) {
     const errorButton = template.querySelector('.error__button');
     errorButton.textContent = 'Загрузить другой файл';
-    
+
     if (hideForm) {
       showMessage(template, '.error__button', null, openUploadForm);
     } else {

@@ -1,4 +1,4 @@
-import { debounce, DEBOUNCE_DELAY, shuffleArrayRandomly } from './utils.js';
+import { debounce, shuffleArrayRandomly } from './utils.js';
 
 const RANDOM_PHOTOS_COUNT = 10;
 const DEBOUNCE_TIMEOUT = 500;

@@ -3,14 +3,13 @@ import { resetEffects, destroyEffects } from './effects.js';
 import { sendData } from './api.js';
 import { showErrorMessage, showSuccessMessage } from './message.js';
 import { 
-  isEscapeKey, 
-  checkFileType, 
-  createObjectURLFromFile, 
+  isEscapeKey,
+  checkFileType,
+  createObjectURLFromFile,
   revokeObjectURLIfExists,
-  scrollToElementSmoothly 
+  scrollToElementSmoothly
 } from './utils.js';
 
-// Константы в начале файла
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
 const MAX_HASHTAG_LENGTH = 20;
@@ -26,7 +25,6 @@ const ErrorText = {
   INVALID_FILE_TYPE: 'Загрузите изображение в формате JPG или PNG',
 };
 
-// DOM элементы
 const form = document.querySelector('.img-upload__form');
 const overlay = document.querySelector('.img-upload__overlay');
 const cancelButton = overlay.querySelector('.img-upload__cancel');
@@ -42,7 +40,6 @@ const effectLevelValueElement = overlay.querySelector('.effect-level__value');
 let pristine;
 let documentKeydownHandler = null;
 
-// Вспомогательные функции
 const normalizeTags = (tagString) => tagString
   .trim()
   .split(' ')
@@ -118,7 +115,6 @@ const onFieldBlur = () => {
   }
 };
 
-// Основные функции модального окна
 const hideModal = () => {
   form.reset();
   resetScale();
@@ -143,11 +139,9 @@ const hideModal = () => {
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  
-  // Восстанавливаем скролл для основной страницы
+
   document.body.style.overflow = 'auto';
-  
-  // Удаляем обработчик Escape
+
   if (documentKeydownHandler) {
     document.removeEventListener('keydown', documentKeydownHandler);
     documentKeydownHandler = null;
@@ -161,10 +155,8 @@ const onCancelButtonClick = () => {
 };
 
 const showModal = () => {
-  // Блокируем скролл основной страницы при открытии формы
   document.body.style.overflow = 'hidden';
-  
-  // Создаем обработчик Escape
+
   documentKeydownHandler = (evt) => {
     if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
       evt.preventDefault();
@@ -250,8 +242,6 @@ const onFileInputChange = () => {
   }
 
   if (!checkFileType(file, FILE_TYPES)) {
-    // Показываем сообщение об ошибке формата файла
-    // Второй параметр false - не скрывать форму (она еще не открыта)
     showErrorMessage(ErrorText.INVALID_FILE_TYPE, false);
     fileField.value = '';
     return;
@@ -292,7 +282,6 @@ const onFormSubmit = async (evt) => {
     }, 300);
 
   } catch (error) {
-    // Показываем сообщение об ошибке отправки формы
     showErrorMessage(error.message, false);
   } finally {
     unblockSubmitButton();
