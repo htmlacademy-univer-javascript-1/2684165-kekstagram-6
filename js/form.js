@@ -2,17 +2,15 @@ import { resetScale } from './scale.js';
 import { resetEffects, destroyEffects } from './effects.js';
 import { sendData } from './api.js';
 import { showErrorMessage, showSuccessMessage } from './message.js';
+import { 
+  isEscapeKey, 
+  checkFileType, 
+  createObjectURLFromFile, 
+  revokeObjectURLIfExists,
+  scrollToElementSmoothly 
+} from './utils.js';
 
-const form = document.querySelector('.img-upload__form');
-const overlay = document.querySelector('.img-upload__overlay');
-const cancelButton = document.querySelector('.img-upload__cancel');
-const fileField = document.querySelector('.img-upload__input');
-const hashtagField = document.querySelector('.text__hashtags');
-const commentField = document.querySelector('.text__description');
-const submitButton = document.querySelector('.img-upload__submit');
-const imgPreview = document.querySelector('.img-upload__preview img');
-const effectsPreviews = document.querySelectorAll('.effects__preview');
-
+// Константы в начале файла
 const MAX_HASHTAG_COUNT = 5;
 const MAX_COMMENT_LENGTH = 140;
 const MAX_HASHTAG_LENGTH = 20;
@@ -28,8 +26,23 @@ const ErrorText = {
   INVALID_FILE_TYPE: 'Загрузите изображение в формате JPG или PNG',
 };
 
-let pristine;
+// DOM элементы
+const form = document.querySelector('.img-upload__form');
+const overlay = document.querySelector('.img-upload__overlay');
+const cancelButton = overlay.querySelector('.img-upload__cancel');
+const fileField = form.querySelector('.img-upload__input');
+const hashtagField = form.querySelector('.text__hashtags');
+const commentField = form.querySelector('.text__description');
+const submitButton = form.querySelector('.img-upload__submit');
+const imgPreview = overlay.querySelector('.img-upload__preview img');
+const effectsPreviews = overlay.querySelectorAll('.effects__preview');
+const scaleValueElement = overlay.querySelector('.scale__control--value');
+const effectLevelValueElement = overlay.querySelector('.effect-level__value');
 
+let pristine;
+let documentKeydownHandler = null;
+
+// Вспомогательные функции
 const normalizeTags = (tagString) => tagString
   .trim()
   .split(' ')
@@ -73,13 +86,6 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
-const isValidFileType = (file) => {
-  const fileName = file.name.toLowerCase();
-  return FILE_TYPES.some((type) => fileName.endsWith(type));
-};
-
-const createPreviewUrl = (file) => URL.createObjectURL(file);
-
 const updateImagePreview = (fileUrl) => {
   if (imgPreview) {
     imgPreview.src = fileUrl;
@@ -96,10 +102,23 @@ const updateImagePreview = (fileUrl) => {
 
 const cleanupObjectUrls = () => {
   if (imgPreview && imgPreview.src && imgPreview.src.startsWith('blob:')) {
-    URL.revokeObjectURL(imgPreview.src);
+    revokeObjectURLIfExists(imgPreview.src);
   }
 };
 
+const onFieldFocus = () => {
+  if (documentKeydownHandler) {
+    document.removeEventListener('keydown', documentKeydownHandler);
+  }
+};
+
+const onFieldBlur = () => {
+  if (documentKeydownHandler) {
+    document.addEventListener('keydown', documentKeydownHandler);
+  }
+};
+
+// Основные функции модального окна
 const hideModal = () => {
   form.reset();
   resetScale();
@@ -124,34 +143,38 @@ const hideModal = () => {
 
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onDocumentKeydown);
+  
+  // Восстанавливаем скролл для основной страницы
+  document.body.style.overflow = 'auto';
+  
+  // Удаляем обработчик Escape
+  if (documentKeydownHandler) {
+    document.removeEventListener('keydown', documentKeydownHandler);
+    documentKeydownHandler = null;
+  }
 
-  // fileField.value = '';
+  fileField.value = '';
 };
 
 const onCancelButtonClick = () => {
   hideModal();
 };
 
-const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape' && !overlay.classList.contains('hidden')) {
-    evt.preventDefault();
-    onCancelButtonClick();
-  }
-};
-
-const onFieldFocus = () => {
-  document.removeEventListener('keydown', onDocumentKeydown);
-};
-
-const onFieldBlur = () => {
-  document.addEventListener('keydown', onDocumentKeydown);
-};
-
 const showModal = () => {
+  // Блокируем скролл основной страницы при открытии формы
+  document.body.style.overflow = 'hidden';
+  
+  // Создаем обработчик Escape
+  documentKeydownHandler = (evt) => {
+    if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
+      evt.preventDefault();
+      hideModal();
+    }
+  };
+
   overlay.classList.remove('hidden');
   document.body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
+  document.addEventListener('keydown', documentKeydownHandler);
 
   if (pristine) {
     pristine.reset();
@@ -226,85 +249,19 @@ const onFileInputChange = () => {
     return;
   }
 
-  if (!isValidFileType(file)) {
+  if (!checkFileType(file, FILE_TYPES)) {
+    // Показываем сообщение об ошибке формата файла
+    // Второй параметр false - не скрывать форму (она еще не открыта)
     showErrorMessage(ErrorText.INVALID_FILE_TYPE, false);
-
     fileField.value = '';
     return;
   }
 
   cleanupObjectUrls();
 
-  const fileUrl = createPreviewUrl(file);
+  const fileUrl = createObjectURLFromFile(file);
   updateImagePreview(fileUrl);
   showModal();
-};
-
-const showErrorOverlay = (errorText) => {
-  const errorOverlay = document.createElement('div');
-  errorOverlay.className = 'error-overlay';
-  errorOverlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
-
-  const errorContent = document.createElement('div');
-  errorContent.className = 'error-overlay__content';
-  errorContent.style.cssText = `
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    max-width: 400px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  `;
-
-  errorContent.innerHTML = `
-    <h3 style="margin-bottom: 15px; color: #ff6b6b;">Ошибка загрузки</h3>
-    <p style="margin-bottom: 20px;">${errorText}</p>
-    <button type="button" class="error-overlay__button" style="
-      background-color: #ff6b6b;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-    ">Понятно</button>
-  `;
-
-  errorOverlay.appendChild(errorContent);
-  document.body.appendChild(errorOverlay);
-
-  const closeErrorOverlay = () => {
-    errorOverlay.remove();
-    document.removeEventListener('keydown', onEscapePress);
-  };
-
-  const onEscapePress = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      evt.stopPropagation();
-      closeErrorOverlay();
-    }
-  };
-
-  document.removeEventListener('keydown', onEscapePress);
-  document.addEventListener('keydown', onEscapePress);
-
-  errorOverlay.querySelector('.error-overlay__button').addEventListener('click', closeErrorOverlay);
-  errorOverlay.addEventListener('click', (evt) => {
-    if (evt.target === errorOverlay) {
-      closeErrorOverlay();
-    }
-  });
 };
 
 const onFormSubmit = async (evt) => {
@@ -315,7 +272,7 @@ const onFormSubmit = async (evt) => {
   if (!isValid) {
     const firstError = form.querySelector('.img-upload__field-wrapper--error');
     if (firstError) {
-      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      scrollToElementSmoothly(firstError, { behavior: 'smooth', block: 'center' });
     }
     return;
   }
@@ -324,12 +281,8 @@ const onFormSubmit = async (evt) => {
     blockSubmitButton();
 
     const formData = new FormData(form);
-
-    const scaleValue = document.querySelector('.scale__control--value').value;
-    const effectLevelValue = document.querySelector('.effect-level__value').value;
-
-    formData.append('scale', scaleValue);
-    formData.append('effect-level', effectLevelValue);
+    formData.append('scale', scaleValueElement.value);
+    formData.append('effect-level', effectLevelValueElement.value);
 
     await sendData(formData);
 
@@ -339,6 +292,7 @@ const onFormSubmit = async (evt) => {
     }, 300);
 
   } catch (error) {
+    // Показываем сообщение об ошибке отправки формы
     showErrorMessage(error.message, false);
   } finally {
     unblockSubmitButton();
@@ -351,10 +305,6 @@ const setupEventListeners = () => {
   form.addEventListener('submit', onFormSubmit);
 };
 
-const resetFileInput = () => {
-  fileField.value = '';
-};
-
 const initForm = () => {
   setupValidation();
   setupLiveValidation();
@@ -362,4 +312,8 @@ const initForm = () => {
   setupEventListeners();
 };
 
-export { initForm, hideModal, resetFileInput };
+const openUploadForm = () => {
+  fileField.click();
+};
+
+export { initForm, hideModal, openUploadForm };
