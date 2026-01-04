@@ -140,6 +140,8 @@ const hideModal = () => {
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
 
+  document.body.style.overflow = 'auto';
+
   if (documentKeydownHandler) {
     document.removeEventListener('keydown', documentKeydownHandler);
     documentKeydownHandler = null;
@@ -153,6 +155,7 @@ const onCancelButtonClick = () => {
 };
 
 const showModal = () => {
+  document.body.style.overflow = 'hidden';
 
   documentKeydownHandler = (evt) => {
     if (isEscapeKey(evt) && !overlay.classList.contains('hidden')) {
@@ -239,7 +242,7 @@ const onFileInputChange = () => {
   }
 
   if (!checkFileType(file, FILE_TYPES)) {
-    showErrorMessage(ErrorText.INVALID_FILE_TYPE, true);
+    showErrorMessage(ErrorText.INVALID_FILE_TYPE, false);
     fileField.value = '';
     return;
   }

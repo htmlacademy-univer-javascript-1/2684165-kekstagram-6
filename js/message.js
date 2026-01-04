@@ -103,19 +103,13 @@ const showErrorMessage = (text = 'Не удалось загрузить дан�
     errorButton.textContent = 'Загрузить другой файл';
 
     if (hideForm) {
-      const closeFormCallback = () => {
-        hideModal();
-      };
-      showMessage(template, '.error__button', closeFormCallback, openUploadForm);
+      showMessage(template, '.error__button', null, openUploadForm);
     } else {
       showMessage(template, '.error__button', null, openUploadForm);
     }
   } else {
     if (hideForm) {
-      const closeFormCallback = () => {
-        hideModal();
-      };
-      showMessage(template, '.error__button', closeFormCallback);
+      showMessage(template, '.error__button', hideModal);
     } else {
       showMessage(template, '.error__button');
     }
@@ -124,12 +118,7 @@ const showErrorMessage = (text = 'Не удалось загрузить дан�
 
 const showSuccessMessage = () => {
   const template = successTemplate.cloneNode(true);
-
-  const closeFormCallback = () => {
-    hideModal();
-  };
-
-  showMessage(template, '.success__button', closeFormCallback);
+  showMessage(template, '.success__button', hideModal);
 };
 
 export { showErrorMessage, showSuccessMessage };
