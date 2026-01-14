@@ -1,73 +1,29 @@
-const DEBOUNCE_DELAY = 500;
+export function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
 
-const debounce = (callback, timeoutDelay = DEBOUNCE_DELAY) => {
+export function getRandomArrayElement(array) {
+  return array[getRandomInt(0, array.length)];
+}
+
+export function debounce (callback, timeoutDelay = 500) {
   let timeoutId;
 
-  return (...args) => {
+  return (...rest) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => callback(...args), timeoutDelay);
+    timeoutId = setTimeout(() => callback.apply(this, rest), timeoutDelay);
   };
-};
+}
 
-const isEscapeKey = (evt) => evt.key === 'Escape';
+export function throttle (callback, delayBetweenFrames) {
+  let lastTime = 0;
 
-const isEnterKey = (evt) => evt.key === 'Enter';
+  return (...rest) => {
+    const now = new Date();
 
-const removeEventListenerSafely = (element, eventType, handler) => {
-  if (element && handler) {
-    element.removeEventListener(eventType, handler);
-  }
-};
-
-const checkFileType = (file, allowedTypes = ['jpg', 'jpeg', 'png']) => {
-  const fileName = file.name.toLowerCase();
-  return allowedTypes.some((type) => fileName.endsWith(`.${type}`));
-};
-
-const createObjectURLFromFile = (file) => {
-  if (!file || !URL.createObjectURL) {
-    return null;
-  }
-  return URL.createObjectURL(file);
-};
-
-const revokeObjectURLIfExists = (url) => {
-  if (url && url.startsWith('blob:') && URL.revokeObjectURL) {
-    URL.revokeObjectURL(url);
-  }
-};
-
-const scrollToElementSmoothly = (element, options = {}) => {
-  if (!element || !element.scrollIntoView) {
-    return;
-  }
-
-  const defaultOptions = {
-    behavior: 'smooth',
-    block: 'center',
-    ...options
+    if (now - lastTime >= delayBetweenFrames) {
+      callback.apply(this, rest);
+      lastTime = now;
+    }
   };
-
-  element.scrollIntoView(defaultOptions);
-};
-
-const shuffleArrayRandomly = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
-export {
-  debounce,
-  isEscapeKey,
-  isEnterKey,
-  removeEventListenerSafely,
-  checkFileType,
-  createObjectURLFromFile,
-  revokeObjectURLIfExists,
-  scrollToElementSmoothly,
-  shuffleArrayRandomly
-};
+}

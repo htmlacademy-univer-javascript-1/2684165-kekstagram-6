@@ -1,124 +1,75 @@
-import { openUploadForm } from './form.js';
-import { isEscapeKey } from './utils.js';
-
-const messageTemplate = document.querySelector('#error').content.querySelector('.error');
 const successTemplate = document.querySelector('#success').content.querySelector('.success');
+const errorTemplate = document.querySelector('#error').content.querySelector('.error');
 
-const showMessage = (template, buttonClass, closeCallback = null, extraCallback = null) => {
-  const messageElement = template.cloneNode(true);
-  const messageButton = messageElement.querySelector(buttonClass);
+function appendMessage(element) {
+  document.body.appendChild(element);
+}
 
-  const handlers = {
-    documentKeydown: null,
-    outsideClick: null,
-    messageClick: null,
-    buttonClick: null
-  };
 
-  const removeAllHandlers = () => {
-    if (handlers.documentKeydown) {
-      document.removeEventListener('keydown', handlers.documentKeydown);
-    }
-    if (handlers.outsideClick) {
-      document.removeEventListener('click', handlers.outsideClick);
-    }
-    if (handlers.messageClick) {
-      messageElement.removeEventListener('click', handlers.messageClick);
-    }
-    if (handlers.buttonClick) {
-      messageButton.removeEventListener('click', handlers.buttonClick);
+function setupMessage(messageElement, buttonSelector, closeCallback) {
+  const inner = messageElement.querySelector('div');
+  const button = messageElement.querySelector(buttonSelector);
+
+  const onKeydown = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      close();
     }
   };
 
-  const closeMessage = () => {
-    removeAllHandlers();
+  const onOuterClick = (evt) => {
+    if (!inner.contains(evt.target)) {
+      close();
+    }
+  };
+
+  function close() {
     messageElement.remove();
-
-    if (typeof closeCallback === 'function') {
+    document.removeEventListener('keydown', onKeydown);
+    messageElement.removeEventListener('click', onOuterClick);
+    if (closeCallback) {
       closeCallback();
     }
-  };
+  }
 
-  handlers.buttonClick = () => {
-    closeMessage();
-    if (typeof extraCallback === 'function') {
-      extraCallback();
-    }
-  };
+  button.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    close();
+  });
 
-  handlers.documentKeydown = (evt) => {
-    if (isEscapeKey(evt)) {
-      evt.preventDefault();
-      closeMessage();
-      if (typeof extraCallback === 'function') {
-        extraCallback();
-      }
-    }
-  };
+  document.addEventListener('keydown', onKeydown);
+  messageElement.addEventListener('click', onOuterClick);
+}
 
-  handlers.outsideClick = (evt) => {
-    if (!evt.target.closest(`.${template.classList[0]}__inner`)) {
-      closeMessage();
-      if (typeof extraCallback === 'function') {
-        extraCallback();
-      }
-    }
-  };
+export function showSuccess() {
+  const successElement = successTemplate.cloneNode(true);
+  appendMessage(successElement);
+  setupMessage(successElement, '.success__button');
+}
 
-  handlers.messageClick = (evt) => {
-    if (!evt.target.closest(`.${template.classList[0]}__inner`)) {
-      closeMessage();
-      if (typeof extraCallback === 'function') {
-        extraCallback();
-      }
-    }
-  };
+export function showError() {
+  const errorElement = errorTemplate.cloneNode(true);
+  appendMessage(errorElement);
+  setupMessage(errorElement, '.error__button');
+}
 
-  messageButton.addEventListener('click', handlers.buttonClick);
-  messageElement.addEventListener('click', handlers.messageClick);
-  document.addEventListener('keydown', handlers.documentKeydown);
+export function showLoadError(message) {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.right = '0';
+  container.style.zIndex = '1000';
+  container.style.padding = '10px';
+  container.style.textAlign = 'center';
+  container.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+  container.style.color = '#ffffff';
+  container.style.fontSize = '16px';
+  container.textContent = message;
+
+  document.body.appendChild(container);
 
   setTimeout(() => {
-    document.addEventListener('click', handlers.outsideClick);
-  }, 100);
-
-  document.body.appendChild(messageElement);
-  messageButton.focus();
-};
-
-const hideModal = () => {
-  const overlay = document.querySelector('.img-upload__overlay');
-  if (overlay && !overlay.classList.contains('hidden')) {
-    overlay.classList.add('hidden');
-    document.body.classList.remove('modal-open');
-  }
-};
-
-const showErrorMessage = (text = 'Не удалось загрузить данные. Попробуйте обновить страницу', hideForm = true) => {
-  const template = messageTemplate.cloneNode(true);
-  template.querySelector('.error__title').textContent = text;
-
-  if (text.includes('JPG') || text.includes('PNG') || text.includes('формат')) {
-    const errorButton = template.querySelector('.error__button');
-    errorButton.textContent = 'Загрузить другой файл';
-
-    if (hideForm) {
-      showMessage(template, '.error__button', null, openUploadForm);
-    } else {
-      showMessage(template, '.error__button', null, openUploadForm);
-    }
-  } else {
-    if (hideForm) {
-      showMessage(template, '.error__button', hideModal);
-    } else {
-      showMessage(template, '.error__button');
-    }
-  }
-};
-
-const showSuccessMessage = () => {
-  const template = successTemplate.cloneNode(true);
-  showMessage(template, '.success__button', hideModal);
-};
-
-export { showErrorMessage, showSuccessMessage };
+    container.remove();
+  }, 5000);
+}
