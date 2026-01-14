@@ -1,113 +1,115 @@
-import { isEscapeKey } from './utils.js';
-
-const COMMENTS_PER_STEP = 5;
+const COMMENTS_STEP = 5;
 
 const bigPicture = document.querySelector('.big-picture');
-const closeButton = bigPicture.querySelector('.big-picture__cancel');
-const socialComments = bigPicture.querySelector('.social__comments');
-const commentCount = bigPicture.querySelector('.social__comment-count');
-const commentsLoader = bigPicture.querySelector('.comments-loader');
 const bigPictureImg = bigPicture.querySelector('.big-picture__img img');
 const likesCount = bigPicture.querySelector('.likes-count');
 const commentsCount = bigPicture.querySelector('.comments-count');
+const commentsList = bigPicture.querySelector('.social__comments');
 const socialCaption = bigPicture.querySelector('.social__caption');
+const commentsCounter = bigPicture.querySelector('.social__comment-count');
+const commentsLoader = bigPicture.querySelector('.comments-loader');
+const closeButton = bigPicture.querySelector('.big-picture__cancel');
+
+const body = document.body;
 
 let currentComments = [];
-let commentsShown = 0;
-let documentKeydownHandler = null;
+let shownCommentsCount = 0;
 
-const createComment = (comment) => {
-  const commentElement = document.createElement('li');
-  commentElement.classList.add('social__comment');
+function createCommentElement(comment) {
+  const li = document.createElement('li');
+  li.classList.add('social__comment');
 
-  commentElement.innerHTML = `
-    <img
-      class="social__picture"
-      src="${comment.avatar}"
-      alt="${comment.name}"
-      width="35" height="35">
-    <p class="social__text">${comment.message}</p>
-  `;
+  const img = document.createElement('img');
+  img.classList.add('social__picture');
+  img.src = comment.avatar;
+  img.alt = comment.name;
+  img.width = 35;
+  img.height = 35;
 
-  return commentElement;
-};
+  const text = document.createElement('p');
+  text.classList.add('social__text');
+  text.textContent = comment.message;
 
-const renderCommentsPortion = () => {
-  const commentsToShow = currentComments.slice(commentsShown, commentsShown + COMMENTS_PER_STEP);
+  li.appendChild(img);
+  li.appendChild(text);
 
+  return li;
+}
+
+function updateCommentsCounter() {
+  const total = currentComments.length;
+  commentsCounter.textContent = `Показано ${shownCommentsCount} из ${total} комментариев`;
+}
+
+function renderCommentsPortion() {
   const fragment = document.createDocumentFragment();
-  commentsToShow.forEach((comment) => {
-    fragment.appendChild(createComment(comment));
-  });
 
-  socialComments.appendChild(fragment);
-  commentsShown += commentsToShow.length;
+  const nextCount = Math.min(shownCommentsCount + COMMENTS_STEP, currentComments.length);
 
-  const commentCountText = `${commentsShown} из <span class="comments-count">${currentComments.length}</span> комментариев`;
-  commentCount.innerHTML = commentCountText;
+  for (let i = shownCommentsCount; i < nextCount; i++) {
+    const commentElement = createCommentElement(currentComments[i]);
+    fragment.appendChild(commentElement);
+  }
 
-  if (commentsShown >= currentComments.length) {
+  commentsList.appendChild(fragment);
+  shownCommentsCount = nextCount;
+  updateCommentsCounter();
+
+  if (shownCommentsCount >= currentComments.length) {
     commentsLoader.classList.add('hidden');
   } else {
     commentsLoader.classList.remove('hidden');
   }
-};
+}
 
-const loadMoreComments = () => {
-  renderCommentsPortion();
-};
-
-const resetComments = () => {
-  currentComments = [];
-  commentsShown = 0;
-  socialComments.innerHTML = '';
-};
-
-const renderComments = (comments) => {
-  resetComments();
-  currentComments = comments;
-  renderCommentsPortion();
-};
-
-const closeFullscreenPicture = () => {
-  bigPicture.classList.add('hidden');
-  document.body.classList.remove('modal-open');
-  resetComments();
-
-  if (documentKeydownHandler) {
-    document.removeEventListener('keydown', documentKeydownHandler);
-    documentKeydownHandler = null;
+function onEscKeydown(evt) {
+  if (evt.key === 'Escape') {
+    evt.preventDefault();
+    closeBigPicture();
   }
-};
+}
 
-const openFullscreenPicture = (pictureData) => {
-  const { url, description, likes, comments } = pictureData;
+export function openBigPicture(photo) {
+  bigPictureImg.src = photo.url;
+  bigPictureImg.alt = photo.description;
+  likesCount.textContent = photo.likes;
+  commentsCount.textContent = photo.comments.length;
+  socialCaption.textContent = photo.description;
 
-  bigPictureImg.src = url;
-  bigPictureImg.alt = description;
-  likesCount.textContent = likes;
-  commentsCount.textContent = comments.length;
-  socialCaption.textContent = description;
+  // готовим комментарии
+  commentsList.innerHTML = '';
+  currentComments = photo.comments.slice();
+  shownCommentsCount = 0;
 
-  renderComments(comments);
+  if (currentComments.length === 0) {
+    commentsCounter.textContent = 'Показано 0 из 0 комментариев';
+    commentsLoader.classList.add('hidden');
+  } else {
+    renderCommentsPortion();
+  }
+
+  // показываем счётчик и кнопку (если есть ещё комментарии)
+  commentsCounter.classList.remove('hidden');
 
   bigPicture.classList.remove('hidden');
-  document.body.classList.add('modal-open');
+  body.classList.add('modal-open');
 
-  documentKeydownHandler = (evt) => {
-    if (isEscapeKey(evt) && !bigPicture.classList.contains('hidden')) {
-      closeFullscreenPicture();
-    }
-  };
+  document.addEventListener('keydown', onEscKeydown);
+}
 
-  document.addEventListener('keydown', documentKeydownHandler);
-};
+export function closeBigPicture() {
+  bigPicture.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onEscKeydown);
+}
 
-const onCloseButtonClick = () => {
-  closeFullscreenPicture();
-};
+// закрытие по крестику
+closeButton.addEventListener('click', () => {
+  closeBigPicture();
+});
 
-commentsLoader.addEventListener('click', loadMoreComments);
-closeButton.addEventListener('click', onCloseButtonClick);
-
-export { openFullscreenPicture };
+// загрузка ещё комментариев
+commentsLoader.addEventListener('click', (evt) => {
+  evt.preventDefault();
+  renderCommentsPortion();
+});

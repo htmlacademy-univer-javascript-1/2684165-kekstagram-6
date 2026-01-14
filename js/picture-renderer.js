@@ -1,60 +1,39 @@
-import { openFullscreenPicture } from './fullscreen-picture.js';
+import { openBigPicture } from './big-picture.js';
 
 const picturesContainer = document.querySelector('.pictures');
-const pictureTemplate = document.querySelector('#picture');
+const pictureTemplate = document.querySelector('#picture').content.querySelector('.picture');
 
-const clearPictures = () => {
-  if (picturesContainer) {
-    const pictureElements = picturesContainer.querySelectorAll('.picture');
-    pictureElements.forEach((element) => {
-      element.remove();
-    });
-  }
-};
+function createPictureElement(photo) {
+  const pictureElement = pictureTemplate.cloneNode(true);
 
-const renderPictures = (pictures) => {
-  if (!pictureTemplate || !picturesContainer) {
-    return;
-  }
+  const img = pictureElement.querySelector('.picture__img');
+  const likes = pictureElement.querySelector('.picture__likes');
+  const comments = pictureElement.querySelector('.picture__comments');
 
-  clearPictures();
+  img.src = photo.url;
+  img.alt = photo.description;
+  likes.textContent = photo.likes;
+  comments.textContent = photo.comments.length;
 
+  // привязываем данные
+  pictureElement.dataset.photoId = photo.id;
+
+  // обработчик клика по миниатюре
+  pictureElement.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    openBigPicture(photo);
+  });
+
+  return pictureElement;
+}
+
+export function renderPictures(photos) {
   const fragment = document.createDocumentFragment();
 
-  pictures.forEach((pictureData) => {
-    const { url, description, likes, comments, id } = pictureData;
-    const pictureElement = pictureTemplate.content.cloneNode(true).children[0];
-
-    if (id) {
-      pictureElement.dataset.id = id;
-    }
-
-    const img = pictureElement.querySelector('.picture__img');
-    if (img) {
-      img.src = url;
-      img.alt = description;
-      img.loading = 'lazy';
-    }
-
-    const likesElement = pictureElement.querySelector('.picture__likes');
-    if (likesElement) {
-      likesElement.textContent = likes;
-    }
-
-    const commentsElement = pictureElement.querySelector('.picture__comments');
-    if (commentsElement) {
-      commentsElement.textContent = Array.isArray(comments) ? comments.length : comments;
-    }
-
-    pictureElement.addEventListener('click', (evt) => {
-      evt.preventDefault();
-      openFullscreenPicture(pictureData);
-    });
-
+  photos.forEach((photo) => {
+    const pictureElement = createPictureElement(photo);
     fragment.appendChild(pictureElement);
   });
 
   picturesContainer.appendChild(fragment);
-};
-
-export { renderPictures, clearPictures };
+}
