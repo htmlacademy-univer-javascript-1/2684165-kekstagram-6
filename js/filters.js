@@ -1,93 +1,58 @@
-import { debounce, DEBOUNCE_DELAY, shuffleArray } from './utils.js';
+import { renderPictures } from './pictures.js';
+import { debounce } from './util.js';
 
-const RANDOM_PHOTOS_COUNT = 10;
+const FILTER_RANDOM_COUNT = 10;
+const imgFilters = document.querySelector('.img-filters');
+const defaultButton = imgFilters.querySelector('#filter-default');
+const randomButton = imgFilters.querySelector('#filter-random');
+const discussedButton = imgFilters.querySelector('#filter-discussed');
 
-const filtersContainer = document.querySelector('.img-filters');
-const filterButtons = filtersContainer.querySelectorAll('.img-filters__button');
-let currentFilter = 'filter-default';
-let currentPhotos = [];
-let renderCallback = null;
-let debouncedFilterHandler = null;
+let originalPhotos = [];
 
-const FilterType = {
-  DEFAULT: 'filter-default',
-  RANDOM: 'filter-random',
-  DISCUSSED: 'filter-discussed',
-};
+function clearPictures() {
+  document
+    .querySelectorAll('.pictures .picture')
+    .forEach((picture) => picture.remove());
+}
 
-const getRandomPhotos = (photos) => {
-  const shuffledPhotos = shuffleArray([...photos]);
-  return shuffledPhotos.slice(0, RANDOM_PHOTOS_COUNT);
-};
+function setActiveButton(button) {
+  imgFilters
+    .querySelector('.img-filters__button--active')
+    .classList.remove('img-filters__button--active');
+  button.classList.add('img-filters__button--active');
+}
 
-const getDiscussedPhotos = (photos) =>
-  [...photos].sort((a, b) => {
-    const aComments = a.comments ? a.comments.length : 0;
-    const bComments = b.comments ? b.comments.length : 0;
-    return bComments - aComments;
+function getRandomPhotos() {
+  return [...originalPhotos]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, FILTER_RANDOM_COUNT);
+}
+
+function getDiscussedPhotos() {
+  return [...originalPhotos]
+    .sort((a, b) => b.comments.length - a.comments.length);
+}
+
+const debouncedRender = debounce((photos) => {
+  clearPictures();
+  renderPictures(photos);
+});
+
+export function initFilters(photos) {
+  originalPhotos = photos.slice();
+
+  defaultButton.addEventListener('click', () => {
+    setActiveButton(defaultButton);
+    debouncedRender(originalPhotos);
   });
 
-const filterPhotos = (photos, filterType) => {
-  switch (filterType) {
-    case FilterType.RANDOM:
-      return getRandomPhotos(photos);
-    case FilterType.DISCUSSED:
-      return getDiscussedPhotos(photos);
-    case FilterType.DEFAULT:
-    default:
-      return photos;
-  }
-};
-
-const onFilterButtonClick = (evt) => {
-  const target = evt.target;
-
-  if (!target.matches('.img-filters__button')) {
-    return;
-  }
-
-  const clickedButton = target;
-
-  if (clickedButton.id === currentFilter) {
-    return;
-  }
-
-  filterButtons.forEach((button) => {
-    button.classList.remove('img-filters__button--active');
+  randomButton.addEventListener('click', () => {
+    setActiveButton(randomButton);
+    debouncedRender(getRandomPhotos());
   });
-  clickedButton.classList.add('img-filters__button--active');
 
-  currentFilter = clickedButton.id;
-
-  const filteredPhotos = filterPhotos(currentPhotos, currentFilter);
-  renderCallback(filteredPhotos);
-};
-
-const initFilters = (photos, callback) => {
-  filtersContainer.classList.remove('img-filters--inactive');
-
-  currentPhotos = photos;
-  renderCallback = callback;
-
-  if (debouncedFilterHandler) {
-    filtersContainer.removeEventListener('click', debouncedFilterHandler);
-  }
-
-  debouncedFilterHandler = debounce(onFilterButtonClick, DEBOUNCE_DELAY);
-  filtersContainer.addEventListener('click', debouncedFilterHandler);
-
-  filterButtons.forEach((button) => {
-    button.classList.remove('img-filters__button--active');
+  discussedButton.addEventListener('click', () => {
+    setActiveButton(discussedButton);
+    debouncedRender(getDiscussedPhotos());
   });
-  const defaultButton = filtersContainer.querySelector('#filter-default');
-  if (defaultButton) {
-    defaultButton.classList.add('img-filters__button--active');
-  }
-  currentFilter = 'filter-default';
-};
-
-const updateFilterPhotos = (photos) => {
-  currentPhotos = photos;
-};
-
-export { initFilters, updateFilterPhotos };
+}
