@@ -94,6 +94,7 @@ cancelButton.addEventListener('click', (evt) => {
   closeUploadOverlay();
 });
 
+// Создаём экземпляр Pristine
 const pristine = new Pristine(form, {
   classTo: 'img-upload__field-wrapper',
   errorClass: 'img-upload__field-wrapper--invalid',
@@ -101,8 +102,9 @@ const pristine = new Pristine(form, {
   errorTextParent: 'img-upload__field-wrapper',
   errorTextTag: 'span',
   errorTextClass: 'img-upload__error'
-}, false);
+});
 
+// Функции валидации хэш-тегов
 function parseHashtags(value) {
   return value
     .trim()
@@ -157,12 +159,14 @@ function getHashtagErrorMessage(value) {
   return '';
 }
 
+// Добавляем валидатор для хэш-тегов
 pristine.addValidator(
   hashtagsField,
   (value) => validateHashtagFormat(value) && validateHashtagCount(value) && validateHashtagUnique(value),
   getHashtagErrorMessage
 );
 
+// Валидация комментария
 const COMMENT_MAX_LENGTH = 140;
 
 function validateComment(value) {
@@ -176,15 +180,18 @@ function getCommentErrorMessage(value) {
   return '';
 }
 
+// Добавляем валидатор для комментария
 pristine.addValidator(
   commentField,
   validateComment,
   getCommentErrorMessage
 );
 
+// Обработка отправки формы
 form.addEventListener('submit', (evt) => {
   evt.preventDefault();
 
+  // Проверяем валидность формы через Pristine
   const isValid = pristine.validate();
   if (!isValid) {
     return;
